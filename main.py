@@ -93,7 +93,10 @@ if __name__=="__main__":
         extractImages()
 
 
-    # remove foreground and create panorama
+    # remove foreground and fill out the removed part in background
+
+    # using processed background and stitch them together to create panorama
+    # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/ 
 
 
     # display your foreground objects as a video sequence against a white plain background frame by frame.
@@ -101,5 +104,6 @@ if __name__=="__main__":
     # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
 
     # save video
+    
     cap.release()
     cv2.destroyAllWindows()

@@ -15,8 +15,8 @@ foreGround, backGround, fgmasks = [], [], []
 
 
 def mse(img1, img2):
-    # img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-    # img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     diff = cv2.subtract(img1, img2)
     err = np.sum(diff**2)
     mse = err/(float(height*width))
@@ -98,25 +98,26 @@ def extractImages():
     background_subtr_method = cv2.bgsegm.createBackgroundSubtractorGSOC()
     for a in range(frameCount):
         success,img = cap.read()
-        print(type(img))
         if not success:
             print("error in extracting foreground !!!")
         #cv2.imwrite("./tmp/frame%d.jpg" % count, img)     # save frame as JPEG file    
         #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        fgmask = fgbg.apply(img)  
+        fgmask = fgbg.apply(img)
         fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel) 
         #cv2.grabCut(img,fgmask, rect,  bgdModel, fgdModel,  5, cv2.GC_INIT_WITH_RECT)
         #bg = fgbg.getBackgroundImage(img)
         #cv2.imshow('fg mask',fgmask)
         #cv2.imshow('frame', bg)
         #cv2.imwrite("./tmp/frame%d.jpg" % i, fgmask)
-        #fg, bg = [[[0]*3]*width]*height, [[[0]*3]*width]*height
-        fg, bg = np.zeros((height, width, 3)), np.zeros((height, width, 3))
+        #print(len(img), len(img[0]), len(img[0][0]), img[0][0][0])
+        fg, bg = np.zeros((height, width, 3)), np.zeros((height, width, 3))# dont know why it does not work
+        fg = fg.astype('uint8')
+        bg = bg.astype('uint8')
         prev = 0
         for i in range(0, height):
             for j in range(0, width):
                 #print(fgmask[i][j], end = " ")
-                if int(fgmask[i][j]) == 0 and prev == 0:
+                if fgmask[i][j] == 0 and prev == 0:
                     bg[i][j][0] = img[i][j][0]
                     bg[i][j][1] = img[i][j][1]
                     bg[i][j][2] = img[i][j][2]
@@ -134,7 +135,6 @@ def extractImages():
         #cv2.imshow('bg ', fg)
         #cv2.imshow('frame', bg)
         #cv2.imwrite("./tmp/frame%d.jpg" % a, bg)
-        print(type(fg), type(img))
         foreGround.append(fg)
         backGround.append(bg)
         fgmasks.append(fgmask)
@@ -173,10 +173,11 @@ if __name__=="__main__":
     fillBackground()
     # using processed background and stitch them together to create panorama
     # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/ 
-    stitchy = cv2.Stitcher.create()
+    # stitchy = cv2.Stitcher.create()
+    stitchy = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
     ret, panorama = stitchy.stitch(backGround)
     if ret != cv2.STITCHER_OK:
-        print("error occur in stitching")
+        print("error occur in stitching error code: ", ret)
 
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     

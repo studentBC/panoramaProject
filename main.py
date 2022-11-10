@@ -6,6 +6,7 @@ import argparse
 import time
 import shutil
 import imutils
+from StitchPanorama import StitchPanorama
 import numpy as np
 width = 0
 height = 0
@@ -186,10 +187,13 @@ if __name__=="__main__":
     # using processed background and stitch them together to create panorama
     # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/ 
     # stitchy = cv2.Stitcher.create()
-    stitchy = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
-    ret, panorama = stitchy.stitch(backGround)
-    if ret != cv2.STITCHER_OK:
-        print("error occur in stitching error code: ", ret)
+    # stitchy = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
+    # ret, panorama = stitchy.stitch(backGround)
+    # if ret != cv2.STITCHER_OK:
+    #     print("error occur in stitching error code: ", ret)
+    sp = StitchPanorama()
+    for i in range(1, frameCount):
+        sp.stitch(backGround[i-1], backGround[i])
 
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     

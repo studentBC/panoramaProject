@@ -5,7 +5,8 @@ import imutils
 #https://towardsdatascience.com/image-panorama-stitching-with-opencv-2402bde6b46c
 class StitchPanorama:
     #def __init__(self):
-        
+    # img_ = previous background image
+    # img = current one
     def stitch(self, img_, img):
         img1 = cv2.cvtColor(img_,cv2.COLOR_BGR2GRAY)
         img2 = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -37,7 +38,7 @@ class StitchPanorama:
         img3 = cv2.drawMatches(img_,kp1,img,kp2,good,None,**draw_params)
         #cv2.imshow("original_image_drawMatches.jpg", img3)
 
-        MIN_MATCH_COUNT = 10
+        MIN_MATCH_COUNT = 100 # have not decided the best value yet
         if len(good) > MIN_MATCH_COUNT:
             src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
             dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
@@ -51,11 +52,13 @@ class StitchPanorama:
             #cv2.imshow("original_image_overlapping.jpg", img2)
         else:
             print("Not enought matches are found - %d/%d", (len(good)/MIN_MATCH_COUNT))
+            return 0, img 
 
         dst = cv2.warpPerspective(img_,M,(img.shape[1] + img_.shape[1], img.shape[0]))
         dst[0:img.shape[0],0:img.shape[1]] = img
         cv2.imwrite("./tmp/original_image_stitched.jpg", dst)
         cv2.imshow("original_image_stitched.jpg", dst)
+        return 1, dst
 
     def trim(frame):
         #crop top

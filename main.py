@@ -12,7 +12,7 @@ width = 0
 height = 0
 frameCount = 0 
 fps = 0 
-foreGround, backGround, fgmasks = [], [], []
+foreGround, backGround, fgmasks, panoramas = [], [], [], []
 
 
 def mse(img1, img2):
@@ -192,14 +192,35 @@ if __name__=="__main__":
     # if ret != cv2.STITCHER_OK:
     #     print("error occur in stitching error code: ", ret)
     sp = StitchPanorama()
-    for i in range(1, frameCount):
-        sp.stitch(backGround[i-1], backGround[i])
+    pp = backGround[1]
+    fianlFrame = []
+    # since the very beginning frame are usually black we just skip it but in fact
+    # we should search for black one and determine which frame is start frame i just too lazy...
+    panoramas.append(backGround[0])
+    panoramas.append(backGround[1])
+    for i in range(2, frameCount):
+        rev, nextp = sp.stitch(pp, backGround[i])
+        panoramas.append(nextp)
+        pp = nextp
 
     # display your foreground objects as a video sequence against a white plain background frame by frame.
-    
-    # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
+    # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images
+    for i in range(frameCount):
+        #print(len(foreGround[i]), len(foreGround[i][0]))
+        #print(len(panoramas[i]), len(panoramas[i][0]))
+        new_h, new_w, channels = panoramas[i].shape
+        resize = cv2.resize(foreGround[i], (new_w, new_h))
+        dst = cv2.addWeighted(resize, 0.5, panoramas[i], 0.7, 0)
+        fianlFrame.append(dst)
 
+    # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
     # save video
+    wcap = cv2.VideoCapture(0)
+    sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
+    for f in fianlFrame:
+        sv.write(f)
     
+    wcap.release()
+    sv.release()
     cap.release()
     cv2.destroyAllWindows()

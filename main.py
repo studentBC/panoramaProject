@@ -15,38 +15,43 @@ foreGround, backGround, fgmasks = [], [], []
 
 
 def mse(img1, img2):
-    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    #img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    #img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     diff = cv2.subtract(img1, img2)
     err = np.sum(diff**2)
     mse = err/(float(height*width))
     return mse
 #using BFS to get foreground and background
 def fillBackground():
-    Threshold = 1
+    Threshold = 10
     B, G, R, count = 0, 0 ,0, 0
     for a in range(0, frameCount):
+        #cv2.imwrite("./tmp/frame%d.jpg" % a, backGround[a])
         for b in range(0, frameCount):
             #if the missing pixel is found in other frame then we can fill the missing one
-            if a != b and mse(backGround[a], backGround[b]) < Threshold:
+            m = mse(backGround[a], backGround[b])
+            if a != b and m < Threshold:
                 for i in range(0, height):
                     for j in range(0, width):
-                        if fgmasks[a][i][j] == 0 and fgmasks[b][i][j]:
+                        #fgmask = 0 means background
+                        sa = backGround[a][i][j][0]+backGround[a][i][j][1]+backGround[a][i][j][2]
+                        sb = backGround[b][i][j][0]+backGround[b][i][j][1]+backGround[b][i][j][2]
+                        if fgmasks[a][i][j] and fgmasks[b][i][j] == 0 and sa == 0 and sb:
                             backGround[a][i][j][0] = backGround[b][i][j][0]
                             backGround[a][i][j][1] = backGround[b][i][j][1]
                             backGround[a][i][j][2] = backGround[b][i][j][2]
-                            fgmasks[a][i][j] = 1
-                        elif fgmasks[b][i][j] == 0 and fgmasks[a][i][j]:
+                            fgmasks[a][i][j] = 0
+                        elif fgmasks[a][i][j] == 0 and fgmasks[b][i][j] and sb == 0 and sa:
                             backGround[b][i][j][0] = backGround[a][i][j][0]
                             backGround[b][i][j][1] = backGround[a][i][j][1]
                             backGround[b][i][j][2] = backGround[a][i][j][2]
-                            fgmasks[b][i][j] = 1
+                            fgmasks[b][i][j] = 0
         for i in range(0, height):
             for j in range(0, width):
                 #if the pixel is still 0 then we use average of its surrounding pixel to fill it
-                if fgmasks[a][i][j] == 0:
+                if fgmasks[a][i][j]:
                     I = i-1
-                    while I > -1 and fgmasks[a][I][j] == 0:
+                    while I > -1 and fgmasks[a][I][j]:
                         I-=1
                     if I > -1:
                         B+=backGround[a][I][j][0]
@@ -54,7 +59,7 @@ def fillBackground():
                         R+=backGround[a][I][j][2]
                         count+=1
                     I = i+1
-                    while I < height and fgmasks[a][I][j] == 0:
+                    while I < height and fgmasks[a][I][j]:
                         I+=1
                     if I < height:
                         B+=backGround[a][I][j][0]
@@ -62,7 +67,7 @@ def fillBackground():
                         R+=backGround[a][I][j][2]
                         count+=1
                     J = j-1
-                    while J > -1 and fgmasks[a][i][J] == 0:
+                    while J > -1 and fgmasks[a][i][J]:
                         J-=1
                     if J > -1:
                         B+=backGround[a][i][J][0]
@@ -70,7 +75,7 @@ def fillBackground():
                         R+=backGround[a][i][J][2]
                         count+=1
                     J = j+1
-                    while J < width and fgmasks[a][i][J] == 0:
+                    while J < width and fgmasks[a][i][J]:
                         J+=1
                     if J < width:
                         B+=backGround[a][i][J][0]
@@ -84,6 +89,8 @@ def fillBackground():
                         backGround[a][i][j][2] = R/count
                     else:
                         print("maybe go diagnoal direction ???")
+        cv2.imwrite("./tmp/frame%d.jpg" % a, backGround[a])
+        
 
 
 
@@ -104,6 +111,11 @@ def extractImages():
         #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         fgmask = fgbg.apply(img)
         fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel) 
+        # print(fgmask)
+        # for i in range(len(fgmask)):
+        #     for j in range(len(fgmask[0])):
+        #         print(fgmask[i][j], end = ", ")
+        #     print()
         #cv2.grabCut(img,fgmask, rect,  bgdModel, fgdModel,  5, cv2.GC_INIT_WITH_RECT)
         #bg = fgbg.getBackgroundImage(img)
         #cv2.imshow('fg mask',fgmask)
@@ -163,7 +175,7 @@ if __name__=="__main__":
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps =  cap.get(cv2.CAP_PROP_FPS)
-        #frameCount = 4
+        frameCount = 10
         print("we have "+str(width) + " "+ str(height)+" "+ str(frameCount) + " " + str(fps))
         extractImages()
 

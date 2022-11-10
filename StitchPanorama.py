@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import imutils
 #https://python.plainenglish.io/opencv-image-stitching-second-part-388784ccd1a
 #https://towardsdatascience.com/image-panorama-stitching-with-opencv-2402bde6b46c
 class StitchPanorama:

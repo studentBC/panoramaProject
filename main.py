@@ -5,7 +5,6 @@ import os
 import argparse
 import time
 import shutil
-import imutils
 from StitchPanorama import StitchPanorama
 import numpy as np
 width = 0

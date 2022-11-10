@@ -10,7 +10,7 @@ class StitchPanorama:
         img1 = cv2.cvtColor(img_,cv2.COLOR_BGR2GRAY)
         img2 = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
-        sift = cv2.xfeatures2d.SIFT_create()
+        sift = cv2.SIFT_create()
         #sift = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
         # find key points
         kp1, des1 = sift.detectAndCompute(img1,None)
@@ -54,6 +54,7 @@ class StitchPanorama:
 
         dst = cv2.warpPerspective(img_,M,(img.shape[1] + img_.shape[1], img.shape[0]))
         dst[0:img.shape[0],0:img.shape[1]] = img
+        cv2.imwrite("./tmp/original_image_stitched.jpg", dst)
         cv2.imshow("original_image_stitched.jpg", dst)
 
     def trim(frame):

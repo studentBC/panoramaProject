@@ -34,9 +34,9 @@ def mse(img1, img2):
 def fillBackground():
     Threshold = 10
     B, G, R, count = 0, 0 ,0, 0
-    for a in range(0, frameCount):
+    for a in range(0, frame_count):
         #cv2.imwrite("./tmp/frame%d.jpg" % a, backGround[a])
-        for b in range(0, frameCount):
+        for b in range(0, frame_count):
             #if the missing pixel is found in other frame then we can fill the missing one
             m = mse(backGround[a], backGround[b])
             if a != b and m < Threshold:
@@ -112,7 +112,7 @@ def extractImages():
     rect = (300,120,470,350)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     background_subtr_method = cv2.bgsegm.createBackgroundSubtractorGSOC()
-    for a in range(frameCount):
+    for a in range(frame_count):
         success,img = cap.read()
         if not success:
             print("error in extracting foreground !!!")
@@ -238,10 +238,10 @@ if __name__=="__main__":
     if cap.isOpened():
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps =  cap.get(cv2.CAP_PROP_FPS)
-        frameCount = 10
-        print("we have "+str(width) + " "+ str(height)+" "+ str(frameCount) + " " + str(fps))
+        frame_count = 10
+        print("we have "+str(width) + " "+ str(height)+" "+ str(frame_count) + " " + str(fps))
         extractImages()
 
 
@@ -262,14 +262,14 @@ if __name__=="__main__":
     # we should search for black one and determine which frame is start frame i just too lazy...
     panoramas.append(backGround[0])
     panoramas.append(backGround[1])
-    for i in range(2, frameCount):
+    for i in range(2, frame_count):
         rev, nextp = sp.stitch(pp, backGround[i])
         panoramas.append(nextp)
         pp = nextp
 
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images
-    for i in range(frameCount):
+    for i in range(frame_count):
         #print(len(foreGround[i]), len(foreGround[i][0]))
         #print(len(panoramas[i]), len(panoramas[i][0]))
         new_h, new_w, channels = panoramas[i].shape

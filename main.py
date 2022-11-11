@@ -5,12 +5,21 @@ import os
 import argparse
 import time
 import shutil
-from StitchPanorama import StitchPanorama
 import numpy as np
+
+from foreground_extraction import ForegroundExtractor
+from StitchPanorama import StitchPanorama
+
+FG_GRABCUT = "grabcut"
+FG_MOG = "mog"
+FG_MOG2 = "mog2"
+FG_GSOC = "gsoc"
+FG_GMG = "gmg"
+
 width = 0
 height = 0
-frameCount = 0 
-fps = 0 
+frame_count = 0
+fps = 0
 foreGround, backGround, fgmasks, panoramas = [], [], [], []
 
 
@@ -90,7 +99,7 @@ def fillBackground():
                     else:
                         print("maybe go diagnoal direction ???")
         cv2.imwrite("./tmp/frame%d.jpg" % a, backGround[a])
-        
+
 
 
 
@@ -107,10 +116,10 @@ def extractImages():
         success,img = cap.read()
         if not success:
             print("error in extracting foreground !!!")
-        #cv2.imwrite("./tmp/frame%d.jpg" % count, img)     # save frame as JPEG file    
+        #cv2.imwrite("./tmp/frame%d.jpg" % count, img)     # save frame as JPEG file
         #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         fgmask = fgbg.apply(img)
-        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel) 
+        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
         # print(fgmask)
         # for i in range(len(fgmask)):
         #     for j in range(len(fgmask[0])):
@@ -162,8 +171,64 @@ def extractImages():
         k = cv2.waitKey(30) & 0xff
         if k == 27:
             break
-        
+
+def extract_foreground(frames, mode):
+    fgmasks = []
+    extractor = ForegroundExtractor()
+    if mode == FG_GRABCUT:
+        fgmasks = extractor.get_foreground_mask_grabcut(frames)
+    elif mode == FG_MOG:
+        fgmasks = extractor.get_foreground_mask_mog(frames)
+    elif mode == FG_MOG2:
+        fgmasks = extractor.get_foreground_mask_mog2(frames)
+    elif mode == FG_GSOC:
+        fgmasks = extractor.get_foreground_mask_gsoc(frames)
+    elif mode == FG_GMG:
+        fgmasks = extractor.get_foreground_mask_gmg(frames)
+    else:
+        print("Invalid fgmode!")
+        sys.exit(-1)
+
+    return fgmasks
+
+def showVideo(frames, fps, filename):
+    for i in range(frames.shape[0]):
+        cv2.imshow(filename, frames[i])
+        if cv2.waitKey(1000 // fps) & 0xFF == ord('q'):
+            break
+
+def get_frames(cap):
+    frames = []
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret == True:
+            frames.append(frame)
+        else:
+            break
+    return np.array(frames)
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--filepath", required=True)
+    parser.add_argument("-fg", "--fgmode", default=FG_GSOC)
+    return parser.parse_args()
+
+def main(args):
+    cap = cv2.VideoCapture(args.filepath)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps =  int(cap.get(cv2.CAP_PROP_FPS))
+
+    frames = get_frames(cap)
+    # showVideo(frames, fps, args.filepath)
+
+    extract_foreground(frames, args.fgmode)
+
+
 if __name__=="__main__":
+    # args = parse_args()
+    # main(args)
     # read file from mp4 and parse W, L
     filePath = sys.argv[1]
     cap = cv2.VideoCapture(filePath)
@@ -184,7 +249,7 @@ if __name__=="__main__":
     # this issue involved camera motion, size change, object tracking
     fillBackground()
     # using processed background and stitch them together to create panorama
-    # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/ 
+    # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
     # stitchy = cv2.Stitcher.create()
     # stitchy = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
     # ret, panorama = stitchy.stitch(backGround)
@@ -218,7 +283,7 @@ if __name__=="__main__":
     sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
     for f in fianlFrame:
         sv.write(f)
-    
+
     wcap.release()
     sv.release()
     cap.release()

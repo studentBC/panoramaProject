@@ -173,6 +173,7 @@ def extractImages():
             break
 
 def extract_foreground(frames, mode):
+    print("Extracting foreground...")
     fgmasks = []
     extractor = ForegroundExtractor()
     if mode == FG_GRABCUT:
@@ -189,7 +190,10 @@ def extract_foreground(frames, mode):
         print("Invalid fgmode!")
         sys.exit(-1)
 
-    return fgmasks
+    bgmasks = np.where((fgmasks == 1), 0, 1).astype('uint8')
+    fgframes = frames * fgmasks[:, :, :, np.newaxis]
+    bgframes = frames * bgmasks[:, :, :, np.newaxis]
+    return fgframes, bgframes, fgmasks
 
 def showVideo(frames, fps, filename):
     for i in range(frames.shape[0]):
@@ -221,9 +225,7 @@ def main(args):
     fps =  int(cap.get(cv2.CAP_PROP_FPS))
 
     frames = get_frames(cap)
-    # showVideo(frames, fps, args.filepath)
-
-    extract_foreground(frames, args.fgmode)
+    fgframes, bgframes, fgmasks = extract_foreground(frames, args.fgmode)
 
 
 if __name__=="__main__":

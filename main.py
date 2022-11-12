@@ -9,6 +9,7 @@ import numpy as np
 
 from foreground_extraction import ForegroundExtractor
 from StitchPanorama import StitchPanorama
+from tqdm import tqdm
 
 FG_GRABCUT = "grabcut"
 FG_MOG = "mog"
@@ -16,25 +17,24 @@ FG_MOG2 = "mog2"
 FG_GSOC = "gsoc"
 FG_GMG = "gmg"
 
-width = 0
-height = 0
-frame_count = 0
-fps = 0
 panoramas = []
 
 
 def mse(img1, img2):
     #img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     #img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    height, width, _ = img1.shape
     diff = cv2.subtract(img1, img2)
     err = np.sum(diff**2)
     mse = err/(float(height*width))
     return mse
 #using BFS to get foreground and background
 def fillBackground(bg, fgmasks):
+    print("Filling background...")
+    frame_count, height, width, channel = bg.shape
     Threshold = 10
     B, G, R, count = 0, 0 ,0, 0
-    for a in range(0, frame_count):
+    for a in tqdm(range(0,10)):
         #cv2.imwrite("./tmp/frame%d.jpg" % a, backGround[a])
         for b in range(0, frame_count):
             #if the missing pixel is found in other frame then we can fill the missing one

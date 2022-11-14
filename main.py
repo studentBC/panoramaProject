@@ -15,6 +15,7 @@ FG_MOG = "mog"
 FG_MOG2 = "mog2"
 FG_GSOC = "gsoc"
 FG_GMG = "gmg"
+FG_HOG = "hog"
 
 width = 0
 height = 0
@@ -186,6 +187,8 @@ def extract_foreground(frames, mode):
         fgmasks = extractor.get_foreground_mask_gsoc(frames)
     elif mode == FG_GMG:
         fgmasks = extractor.get_foreground_mask_gmg(frames)
+    elif mode == FG_HOG:
+        fgmasks = extractor.get_foreground_mask_hog(frames)
     else:
         print("Invalid fgmode!")
         sys.exit(-1)
@@ -226,11 +229,11 @@ def main(args):
 
     frames = get_frames(cap)
     fgframes, bgframes, fgmasks = extract_foreground(frames, args.fgmode)
-
+    #showVideo(fgframes, fps, "lol")
 
 if __name__=="__main__":
-    # args = parse_args()
-    # main(args)
+    args = parse_args()
+    main(args)
     # read file from mp4 and parse W, L
     filePath = sys.argv[1]
     cap = cv2.VideoCapture(filePath)
@@ -242,9 +245,10 @@ if __name__=="__main__":
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps =  cap.get(cv2.CAP_PROP_FPS)
-        frame_count = 10
+        #frame_count = 10
         print("we have "+str(width) + " "+ str(height)+" "+ str(frame_count) + " " + str(fps))
         extractImages()
+
 
 
     # remove foreground and fill out the removed part in background
@@ -267,6 +271,7 @@ if __name__=="__main__":
     for i in range(2, frame_count):
         rev, nextp = sp.stitch(pp, backGround[i])
         panoramas.append(nextp)
+        #cv2.imwrite("./tmp/pframe%d.jpg" % i, nextp)
         pp = nextp
 
     # display your foreground objects as a video sequence against a white plain background frame by frame.

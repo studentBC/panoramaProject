@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
-from imutils.object_detection import non_max_suppression
 
 from tqdm import tqdm
-
+from imutils.object_detection import non_max_suppression
 
 class ForegroundExtractor:
     hog = cv2.HOGDescriptor()

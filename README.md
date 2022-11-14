@@ -5,3 +5,8 @@ csci576 panorama final Project
 ```python3 -m venv ~/cs576venv```\
 ```source ~/cs576venv/bin/activate```\
 ```pip3 install -r requirements.txt```
+
+## Usage
+```python3 main.py -f <video file path> [-fg] [foreground extraction method]```
+### example
+```python3 main.py -f sample.mp4 -fg mog2```

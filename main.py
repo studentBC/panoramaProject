@@ -34,14 +34,14 @@ def fillBackground(bg, fgmasks):
     frame_count, height, width, channel = bg.shape
     Threshold = 10
     B, G, R, count = 0, 0 ,0, 0
-    for a in tqdm(range(0,10)):
+    for a in tqdm(range(frame_count)):
         #cv2.imwrite("./tmp/frame%d.jpg" % a, backGround[a])
-        for b in range(0, frame_count):
+        for b in range(frame_count):
             #if the missing pixel is found in other frame then we can fill the missing one
             m = mse(bg[a], bg[b])
             if a != b and m < Threshold:
-                for i in range(0, height):
-                    for j in range(0, width):
+                for i in range(height):
+                    for j in range(width):
                         #fgmask = 0 means background
                         sa = bg[a][i][j][0]+bg[a][i][j][1]+bg[a][i][j][2]
                         sb = bg[b][i][j][0]+bg[b][i][j][1]+bg[b][i][j][2]
@@ -55,8 +55,8 @@ def fillBackground(bg, fgmasks):
                             bg[b][i][j][1] = bg[a][i][j][1]
                             bg[b][i][j][2] = bg[a][i][j][2]
                             fgmasks[b][i][j] = 0
-        for i in range(0, height):
-            for j in range(0, width):
+        for i in range(height):
+            for j in range(width):
                 #if the pixel is still 0 then we use average of its surrounding pixel to fill it
                 if fgmasks[a][i][j]:
                     I = i-1

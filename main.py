@@ -158,7 +158,6 @@ def main(args):
     frames = get_frames(cap)
     fg, bg, fgmasks = extract_foreground(frames, args.fgmode)
 
-
     # remove foreground and fill out the removed part in background
     # this issue involved camera motion, size change, object tracking
     fillBackground(bg, fgmasks)
@@ -179,7 +178,6 @@ def main(args):
     for i in range(2, frame_count):
         rev, nextp = sp.stitch(pp, bg[i])
         panoramas.append(nextp)
-        #cv2.imwrite("./tmp/pframe%d.jpg" % i, nextp)
         pp = nextp
 
     # display your foreground objects as a video sequence against a white plain background frame by frame.

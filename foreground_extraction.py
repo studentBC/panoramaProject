@@ -90,17 +90,26 @@ class ForegroundExtractor:
         gammaCorrection,nlevels, signedGradients) 
         hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
         # detect human in the first image then use that block to keep tracking ?
-        # detect people in the image
+        (rects, weights) = hog.detectMultiScale(frames[5], winStride=(8, 8),
+		                                            padding=(2, 2), scale=1.05)
+        c = 0
+        for (x, y, w, h) in rects:
+            cv2.rectangle(frames[5], (x, y), (x + w, y + h), (0, 0, 255), 2)
+        cv2.imshow("lol", frames[5])
+        cv2.waitKey(1000)
+        # detect people in the image eg: in Stairs we use frame [2] as target
+        target = cv2.cvtColor(frames[5], cv2.COLOR_BGR2YCR_CB)
         fgmasks = []
         for frame in tqdm(frames):
-            # h = hog.compute(frame)
-            (rects, weights) = hog.detectMultiScale(frame, winStride=(8, 8),
-		                                            padding=(2, 2), scale=1.05)
+            h = hog.compute(frame)
+            imgYCC = cv2.cvtColor(frame, cv2.COLOR_BGR2YCR_CB)
             # draw the original bounding boxes
-            for (x, y, w, h) in rects:
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            cv2.imshow("lol", frame)
-            cv2.waitKey(1)
+            #print(imgYCC)
+            print(len(h))
+            for i in range(len(h)):
+                print(h[i], end = ", ")
+
+            break
             # apply non-maxima suppression to the bounding boxes using a
             # fairly large overlap threshold to try to maintain overlapping
             # boxes that are still people

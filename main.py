@@ -119,7 +119,7 @@ def extract_foreground(frames, mode):
     elif mode == FG_HOG:
         fgmasks = extractor.get_foreground_mask_hog(frames)
     elif mode == FG_MV:
-        fgmasks = extractor.get_foreground_mask_mv(frames, 16)
+        fgmasks = extractor.get_foreground_mask_mv(frames)
     else:
         print("Invalid fgmode!")
         sys.exit(-1)

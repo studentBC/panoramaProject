@@ -63,44 +63,21 @@ class ForegroundExtractor:
             fgmasks.append(fgmask)
         return np.array(fgmasks)
     #get motion vector
-    def get_foreground_mask_mv(self, frames, k):
-        #print("enter get_foreground_mask_mv")
-        fgmasks = []
-        #motion_vectors = [] to record background motion vector
-        end = len(frames)
+    def get_foreground_mask_mv(self, frames, bs=16, k=16, threshold=15):
+        frame_count, height, width, _ = frames.shape
+        frames_yuv = np.array([cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb) for frame in frames])
+        fgmasks = np.zeros((frame_count, height, width), np.uint8)
+
         mv = motionVector()
-        #we have 16*16 block or k*k
-        for a in tqdm(range(1, end)):
-            block = [] # list of pair of value, motion vector
-            prevFrame = cv2.cvtColor(frames[a-1], cv2.COLOR_BGR2YCrCb)[:,:,0]
-            curFrame = cv2.cvtColor(frames[a], cv2.COLOR_BGR2YCrCb)[:,:,0]
-            for i in range(0, frames[a].shape[0], k):
-                for j in range(0, frames[a].shape[1], k):
-                    #calculate one block value 
-                    # YCrCb = cv2.cvtColor(frames[a], cv2.COLOR_BGR2YCrCb)
-                    # Y, Cr, Cb = cv2.split(YCrCb)
-                    value, vector = mv.getMAD(i, j,  curFrame, prevFrame, k)
-                    block.append([value, vector, (i, j)])
-            #sort by value to determine which motion vector belongs to background
-            #we determine by the largest different between two sequence pls note that this soluiton can only apply
-            #for single object moving in a static background
-            block.sort()
-            diff = block[1][0]-block[0][0]
-            threshold = (block[-1][0]-block[0][0])/2
-            fgmask = np.zeros(frames[a].shape[:2], np.uint8)
-            #the difference range should not exceed a threshold
-            for i in range(2, end):
-                if block[i][0] - block[i-1][0] > threshold:
-                    #find the foreground start index
-                    index = i
-                    for j in range(i, end):
-                        #start to mask the macroblock 
-                        fgmask[block[j][2][0]: block[j][2][0]+k, block[j][2][1]:block[j][2][1]+k , 0] = 1
-                    fgmasks.append(fgmask)
-                    break
-            #since we will lost one frame in the very beginning or end so we just insert one frame in the beginning
-        fgmasks.insert(0, fgmasks[0])
-        fgmasks.append(fgmask)
+
+        for fn in tqdm(range(1, frame_count)):
+            for y in range(0, height, bs):
+                for x in range(0, width, bs):
+                    bw = bs if x + bs <= width else width - x
+                    bh = bs if y + bs <= height else height - y
+                    dir_y, dir_x = mv.getBlockMV(frames_yuv[fn-1], frames_yuv[fn], y, x, bh, bw, k)
+                    if dir_y ** 2 + dir_x ** 2 > threshold ** 2:
+                        fgmasks[fn, y: y+bh, x: x+bw] = 1
 
         return fgmasks
 

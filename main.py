@@ -17,6 +17,7 @@ FG_MOG2 = "mog2"
 FG_GSOC = "gsoc"
 FG_GMG = "gmg"
 FG_HOG = "hog"
+FG_MV = "mv" #motion vector
 
 panoramas = []
 
@@ -117,6 +118,8 @@ def extract_foreground(frames, mode):
         fgmasks = extractor.get_foreground_mask_gmg(frames)
     elif mode == FG_HOG:
         fgmasks = extractor.get_foreground_mask_hog(frames)
+    elif mode == FG_MV:
+        fgmasks = extractor.get_foreground_mask_mv(frames, 16)
     else:
         print("Invalid fgmode!")
         sys.exit(-1)
@@ -146,6 +149,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--filepath", required=True)
     parser.add_argument("-fg", "--fgmode", default=FG_GSOC)
+    parser.add_argument("-sd","--search_distance", default=8)
     return parser.parse_args()
 
 def main(args):

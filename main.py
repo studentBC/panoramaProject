@@ -18,8 +18,6 @@ FG_GSOC = "gsoc"
 FG_GMG = "gmg"
 FG_HOG = "hog"
 FG_MV = "mv" #motion vector
-FG_DOF = "dof"
-FG_LKO = "lko"
 
 panoramas = []
 
@@ -122,10 +120,6 @@ def extract_foreground(frames, mode):
         fgmasks = extractor.get_foreground_mask_hog(frames)
     elif mode == FG_MV:
         fgmasks = extractor.get_foreground_mask_mv(frames, 16)
-    elif mode == FG_DOF:
-        fgmasks = extractor.get_foreground_mask_dof(frames)
-    elif mode == FG_LKO:
-        fgmasks = extractor.get_foreground_mask_lko(frames)
     else:
         print("Invalid fgmode!")
         sys.exit(-1)

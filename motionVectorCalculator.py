@@ -16,8 +16,8 @@ class motionVector:
         #print(x, y, xstart, ystart, xend, yend)
         total, small, avg = 16*16, sys.maxsize, 0
         targetVector = []
-        for a in range(xstart, xend):
-            for b in range(ystart, yend):
+        for a in range(ystart, yend):
+            for b in range(xstart, xend):
                 if a == x and y == b:
                     continue
                 c, d, sum = a, b, 0

@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+
+from motion_vector import MotionVector
 from tqdm import tqdm
 from imutils.object_detection import non_max_suppression
 
@@ -61,6 +63,26 @@ class ForegroundExtractor:
             fgmask = np.where((fgmask == 255), 1, 0).astype('uint8')
             fgmasks.append(fgmask)
         return np.array(fgmasks)
+    #get motion vector
+    def get_foreground_mask_mv(self, frames, bs, k, threshold):
+        frame_count, height, width, _ = frames.shape
+        frames_yuv = np.array([cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb) for frame in frames])
+        fgmasks = np.zeros((frame_count, height, width), np.uint8)
+
+        mv = MotionVector()
+
+        for fn in tqdm(range(1, frame_count)):
+            for y in range(0, height, bs):
+                for x in range(0, width, bs):
+                    bw = bs if x + bs <= width else width - x
+                    bh = bs if y + bs <= height else height - y
+                    dir_y, dir_x = mv.getBlockMV(frames_yuv[fn-1], frames_yuv[fn], y, x, bh, bw, k)
+                    if dir_y ** 2 + dir_x ** 2 > threshold ** 2:
+                        fgmasks[fn, y: y+bh, x: x+bw] = 1
+            cv2.imshow("dasd", frames[fn] * fgmasks[fn, :, :, np.newaxis])
+            cv2.waitKey(100)
+
+        return fgmasks
 
     #https://pyimagesearch.com/2015/11/09/pedestrian-detection-opencv/
     #https://thedatafrog.com/en/articles/human-detection-video/

@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 
-from motionVectorCalculator import motionVector
 from tqdm import tqdm
 from imutils.object_detection import non_max_suppression
 

@@ -63,7 +63,7 @@ class ForegroundExtractor:
             fgmasks.append(fgmask)
         return np.array(fgmasks)
     #get motion vector
-    def get_foreground_mask_mv(self, frames, bs=16, k=16, threshold=15):
+    def get_foreground_mask_mv(self, frames, bs, k, threshold):
         frame_count, height, width, _ = frames.shape
         frames_yuv = np.array([cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb) for frame in frames])
         fgmasks = np.zeros((frame_count, height, width), np.uint8)
@@ -78,6 +78,8 @@ class ForegroundExtractor:
                     dir_y, dir_x = mv.getBlockMV(frames_yuv[fn-1], frames_yuv[fn], y, x, bh, bw, k)
                     if dir_y ** 2 + dir_x ** 2 > threshold ** 2:
                         fgmasks[fn, y: y+bh, x: x+bw] = 1
+            cv2.imshow("dasd", frames[fn] * fgmasks[fn, :, :, np.newaxis])
+            cv2.waitKey(100)
 
         return fgmasks
 

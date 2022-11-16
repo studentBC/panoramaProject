@@ -102,24 +102,24 @@ def fillBackground(bg, fgmasks):
                         print("maybe go diagnoal direction ???")
         cv2.imwrite("./tmp/frame%d.jpg" % a, bg[a])
 
-def extract_foreground(frames, mode):
+def extract_foreground(frames, args):
     print("Extracting foreground...")
     fgmasks = []
     extractor = ForegroundExtractor()
-    if mode == FG_GRABCUT:
+    if args.fgmode == FG_GRABCUT:
         fgmasks = extractor.get_foreground_mask_grabcut(frames)
-    elif mode == FG_MOG:
+    elif args.fgmode == FG_MOG:
         fgmasks = extractor.get_foreground_mask_mog(frames)
-    elif mode == FG_MOG2:
+    elif args.fgmode == FG_MOG2:
         fgmasks = extractor.get_foreground_mask_mog2(frames)
-    elif mode == FG_GSOC:
+    elif args.fgmode == FG_GSOC:
         fgmasks = extractor.get_foreground_mask_gsoc(frames)
-    elif mode == FG_GMG:
+    elif args.fgmode == FG_GMG:
         fgmasks = extractor.get_foreground_mask_gmg(frames)
-    elif mode == FG_HOG:
+    elif args.fgmode == FG_HOG:
         fgmasks = extractor.get_foreground_mask_hog(frames)
-    elif mode == FG_MV:
-        fgmasks = extractor.get_foreground_mask_mv(frames)
+    elif args.fgmode == FG_MV:
+        fgmasks = extractor.get_foreground_mask_mv(frames, int(args.mv_blocksize), int(args.mv_k), float(args.mv_threshold))
     else:
         print("Invalid fgmode!")
         sys.exit(-1)
@@ -149,7 +149,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--filepath", required=True)
     parser.add_argument("-fg", "--fgmode", default=FG_GSOC)
-    parser.add_argument("-sd","--search_distance", default=8)
+    parser.add_argument("-bs","--mv_blocksize", default=16)
+    parser.add_argument("-k","--mv_k", default=16)
+    parser.add_argument("-th","--mv_threshold", default=15)
     return parser.parse_args()
 
 def main(args):
@@ -160,7 +162,7 @@ def main(args):
     fps =  int(cap.get(cv2.CAP_PROP_FPS))
 
     frames = get_frames(cap)
-    fg, bg, fgmasks = extract_foreground(frames, args.fgmode)
+    fg, bg, fgmasks = extract_foreground(frames, args)
 
     # remove foreground and fill out the removed part in background
     # this issue involved camera motion, size change, object tracking

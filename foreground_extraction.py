@@ -66,22 +66,20 @@ class ForegroundExtractor:
     def get_foreground_mask_mv(self, frames, bs=16, k=16, threshold=15):
         frame_count, height, width, _ = frames.shape
         frames_yuv = np.array([cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb) for frame in frames])
-        fgmasks = [np.zeros((height, width), np.uint8)]
+        fgmasks = np.zeros((frame_count, height, width), np.uint8)
 
         mv = motionVector()
 
         for fn in tqdm(range(1, frame_count)):
-            fgmask = np.zeros((height, width), np.uint8)
             for y in range(0, height, bs):
                 for x in range(0, width, bs):
                     bw = bs if x + bs <= width else width - x
                     bh = bs if y + bs <= height else height - y
                     dir_y, dir_x = mv.getBlockMV(frames_yuv[fn-1], frames_yuv[fn], y, x, bh, bw, k)
                     if dir_y ** 2 + dir_x ** 2 > threshold ** 2:
-                        fgmask[y: y+bh, x: x+bw] = 1
-            fgmasks.append(fgmask)
+                        fgmasks[fn, y: y+bh, x: x+bw] = 1
 
-        return np.array(fgmasks)
+        return fgmasks
 
     #https://pyimagesearch.com/2015/11/09/pedestrian-detection-opencv/
     #https://thedatafrog.com/en/articles/human-detection-video/

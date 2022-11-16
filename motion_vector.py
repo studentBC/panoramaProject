@@ -3,7 +3,7 @@ import sys
 import math
 import numpy as np
 
-class motionVector:
+class MotionVector:
     def getBlockMV(self, prevframe, curframe, y, x, bh, bw, k):
         #our search distance is 2K+1 for k is given by input
         #our right point will be i+16, j+16

@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from motionVectorCalculator import motionVector
+from motion_vector import MotionVector
 from tqdm import tqdm
 from imutils.object_detection import non_max_suppression
 
@@ -68,7 +68,7 @@ class ForegroundExtractor:
         frames_yuv = np.array([cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb) for frame in frames])
         fgmasks = np.zeros((frame_count, height, width), np.uint8)
 
-        mv = motionVector()
+        mv = MotionVector()
 
         for fn in tqdm(range(1, frame_count)):
             for y in range(0, height, bs):

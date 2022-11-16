@@ -119,7 +119,7 @@ def extract_foreground(frames, args):
         fgmasks = extractor.get_foreground_mask_gmg(frames)
     elif args.fgmode == FG_HOG:
         fgmasks = extractor.get_foreground_mask_hog(frames)
-    elif mode == FG_DOF:
+    elif args.fgmode == FG_DOF:
         fgmasks = extractor.get_foreground_mask_dof(frames)
     elif args.fgmode == FG_MV:
         fgmasks = extractor.get_foreground_mask_mv(frames, int(args.mv_blocksize), int(args.mv_k), float(args.mv_threshold))

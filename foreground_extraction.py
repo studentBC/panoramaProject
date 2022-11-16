@@ -123,7 +123,7 @@ class ForegroundExtractor:
         hsv = np.zeros_like(frames[0])
         hsv[..., 1] = 255
         fgmasks = []
-        fgmasks.append(np.zeros_like(frames[0]))
+        fgmasks.append(np.zeros(frames[0].shape[:2], np.uint8))
         #print("enter get_foreground_mask_dof")
         for i in tqdm(range(1, len(frames))):
             next = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
@@ -136,12 +136,13 @@ class ForegroundExtractor:
             #cv2.imshow("gray-image",bgr[:,:, 2:3])
             #now we convert every fram to 0 or 255
             (thresh, im_bw) = cv2.threshold(bgr[:,:, 2:3], 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-            # cv2.imshow('frame2', im_bw)
-            # k = cv2.waitKey(30) & 0xff
+            cv2.imshow('frame2', im_bw)
+            k = cv2.waitKey(30) & 0xff
             # replay any > 0 to 1
             im_bw[im_bw > 0] = 1
             prvs = next
             fgmasks.append(im_bw)
+            #print(len(im_bw), len(im_bw[0]))
         # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         # fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
         

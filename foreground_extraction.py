@@ -61,47 +61,6 @@ class ForegroundExtractor:
             fgmask = np.where((fgmask == 255), 1, 0).astype('uint8')
             fgmasks.append(fgmask)
         return np.array(fgmasks)
-    #get motion vector
-    def get_foreground_mask_mv(self, frames, k):
-        #print("enter get_foreground_mask_mv")
-        fgmasks = []
-        #motion_vectors = [] to record background motion vector
-        end = len(frames)
-        mv = motionVector()
-        #we have 16*16 block or k*k
-        for a in tqdm(range(1, end)):
-            block = [] # list of pair of value, motion vector
-            prevFrame = cv2.cvtColor(frames[a-1], cv2.COLOR_BGR2YCrCb)[:,:,0]
-            curFrame = cv2.cvtColor(frames[a], cv2.COLOR_BGR2YCrCb)[:,:,0]
-            for i in range(0, frames[a].shape[0], k):
-                for j in range(0, frames[a].shape[1], k):
-                    #calculate one block value 
-                    # YCrCb = cv2.cvtColor(frames[a], cv2.COLOR_BGR2YCrCb)
-                    # Y, Cr, Cb = cv2.split(YCrCb)
-                    value, vector = mv.getMAD(i, j,  curFrame, prevFrame, k)
-                    block.append([value, vector, (i, j)])
-            #sort by value to determine which motion vector belongs to background
-            #we determine by the largest different between two sequence pls note that this soluiton can only apply
-            #for single object moving in a static background
-            block.sort()
-            diff = block[1][0]-block[0][0]
-            threshold = (block[-1][0]-block[0][0])/2
-            fgmask = np.zeros(frames[a].shape[:2], np.uint8)
-            #the difference range should not exceed a threshold
-            for i in range(2, end):
-                if block[i][0] - block[i-1][0] > threshold:
-                    #find the foreground start index
-                    index = i
-                    for j in range(i, end):
-                        #start to mask the macroblock 
-                        fgmask[block[j][2][0]: block[j][2][0]+k, block[j][2][1]:block[j][2][1]+k , 0] = 1
-                    fgmasks.append(fgmask)
-                    break
-            #since we will lost one frame in the very beginning or end so we just insert one frame in the beginning
-        fgmasks.insert(0, fgmasks[0])
-        fgmasks.append(fgmask)
-
-        return fgmasks
 
     #https://pyimagesearch.com/2015/11/09/pedestrian-detection-opencv/
     #https://thedatafrog.com/en/articles/human-detection-video/

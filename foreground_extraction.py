@@ -107,28 +107,34 @@ class ForegroundExtractor:
         prvs = cv2.cvtColor(frames[0], cv2.COLOR_BGR2GRAY)
         hsv = np.zeros_like(frames[0])
         hsv[..., 1] = 255
+        fgmasks = []
         #print("enter get_foreground_mask_dof")
         for i in tqdm(range(1, len(frames))):
             next = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
             flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-            print(type(flow), len(flow[0][0]))
-
             mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
             hsv[..., 0] = ang*180/np.pi/2
             hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
             bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-            cv2.imshow('frame2', bgr)
-            k = cv2.waitKey(30) & 0xff
+            #h, s, v1 = cv2.split(bgr)
+            #cv2.imshow("gray-image",bgr[:,:, 2:3])
+            #now we convert every fram to 0 or 255
+            (thresh, im_bw) = cv2.threshold(bgr[:,:, 2:3], 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+            # cv2.imshow('frame2', im_bw)
+            # k = cv2.waitKey(30) & 0xff
+            # replay any > 0 to 1
+            im_bw[im_bw > 0] = 1
             prvs = next
-
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
-        fgmasks = []
-        for frame in tqdm(frames):
-            fgmask = fgbg.apply(frame)
-            fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
-            fgmask = np.where((fgmask == 255), 1, 0).astype('uint8')
-            fgmasks.append(fgmask)
+            fgmasks.append(im_bw)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        # fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
+        
+        # for frame in tqdm(frames):
+        #     fgmask = fgbg.apply(frame)
+        #     fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
+        #     fgmask = np.where((fgmask == 255), 1, 0).astype('uint8')
+        #     fgmasks.append(fgmask)
+        fgmasks.append(fgmasks[-1])
         return np.array(fgmasks)
         
     def get_foreground_mask_lko(self, frames):

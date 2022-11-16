@@ -66,18 +66,20 @@ class ForegroundExtractor:
     def get_foreground_mask_mv(self, frames, k):
         #print("enter get_foreground_mask_mv")
         fgmasks = []
+        #motion_vectors = [] to record background motion vector
         end = len(frames)
         mv = motionVector()
         #we have 16*16 block or k*k
         for a in tqdm(range(1, end)):
             block = [] # list of pair of value, motion vector
-            for i in range(0, frames[a].shape[0], 16):
-                for j in range(0, frames[a].shape[1], 16):
+            prevFrame = cv2.cvtColor(frames[a-1], cv2.COLOR_BGR2YCrCb)[:,:,0]
+            curFrame = cv2.cvtColor(frames[a], cv2.COLOR_BGR2YCrCb)[:,:,0]
+            for i in range(0, frames[a].shape[0], k):
+                for j in range(0, frames[a].shape[1], k):
                     #calculate one block value 
                     # YCrCb = cv2.cvtColor(frames[a], cv2.COLOR_BGR2YCrCb)
                     # Y, Cr, Cb = cv2.split(YCrCb)
-                    value, vector = mv.getMAD(i, j, cv2.cvtColor(frames[a], cv2.COLOR_BGR2YCrCb)[:,:,0] 
-                                                    , cv2.cvtColor(frames[a-1], cv2.COLOR_BGR2YCrCb)[:,:,0], k)
+                    value, vector = mv.getMAD(i, j,  curFrame, prevFrame, k)
                     block.append([value, vector, (i, j)])
             #sort by value to determine which motion vector belongs to background
             #we determine by the largest different between two sequence pls note that this soluiton can only apply
@@ -86,7 +88,6 @@ class ForegroundExtractor:
             diff = block[1][0]-block[0][0]
             threshold = (block[-1][0]-block[0][0])/2
             fgmask = np.zeros(frames[a].shape[:2], np.uint8)
-            print("we get threshold: ", threshold)
             #the difference range should not exceed a threshold
             for i in range(2, end):
                 if block[i][0] - block[i-1][0] > threshold:

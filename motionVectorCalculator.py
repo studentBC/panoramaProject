@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 class motionVector:
-    def getMAD(self, prevframe, curframe, y, x, bh, bw, k):
+    def getBlockMV(self, prevframe, curframe, y, x, bh, bw, k):
         #our search distance is 2K+1 for k is given by input
         #our right point will be i+16, j+16
         height, width, _ = curframe.shape
@@ -15,10 +15,8 @@ class motionVector:
 
         mad_values = []
         for i in range(ystart, yend + 1):
-            tmp = []
             for j in range(xstart, xend + 1):
-                tmp.append(np.mean(np.absolute(curblock - prevframe[i: i+bh, j: j+bw, 0])))
-            mad_values.append(tmp)
+                mad_values.append(np.mean(np.absolute(curblock - prevframe[i: i+bh, j: j+bw, 0])))
 
         min_index = np.argmin(mad_values)
         target_y, target_x = ystart + min_index // (xend - xstart + 1), xstart + (min_index % (xend - xstart + 1))

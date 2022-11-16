@@ -124,16 +124,16 @@ class ForegroundExtractor:
         hsv[..., 1] = 255
         fgmasks = []
         fgmasks.append(np.zeros(frames[0].shape[:2], np.uint8))
-        #print("enter get_foreground_mask_dof")
         for i in tqdm(range(1, len(frames))):
             next = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
-            flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+            #(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+            #the last parameter we use OPTFLOW_FARNEBACK_GAUSSIAN = 256
+            #the sixth parameter determines the window size, the larger it is the blurer we use 50
+            flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 50, 3, 5, 1.5, 256)
             mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
             hsv[..., 0] = ang*180/np.pi/2
             hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
             bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-            #h, s, v1 = cv2.split(bgr)
-            #cv2.imshow("gray-image",bgr[:,:, 2:3])
             #now we convert every fram to 0 or 255
             (thresh, im_bw) = cv2.threshold(bgr[:,:, 2:3], 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
             cv2.imshow('frame2', im_bw)
@@ -142,13 +142,4 @@ class ForegroundExtractor:
             im_bw[im_bw > 0] = 1
             prvs = next
             fgmasks.append(im_bw)
-            #print(len(im_bw), len(im_bw[0]))
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        # fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
-        
-        # for frame in tqdm(frames):
-        #     fgmask = fgbg.apply(frame)
-        #     fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
-        #     fgmask = np.where((fgmask == 255), 1, 0).astype('uint8')
-        #     fgmasks.append(fgmask)
         return np.array(fgmasks)

@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 from motion_vector import MotionVector
 from tqdm import tqdm
 from imutils.object_detection import non_max_suppression
@@ -115,4 +116,30 @@ class ForegroundExtractor:
                 cv2.grabCut(frame, fgmask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
             fgmask = np.where((fgmask == 2) | (fgmask == 0), 0, 1).astype('uint8')
             fgmasks.append(fgmask)
+        return np.array(fgmasks)
+        
+    def get_foreground_mask_dof(self, frames):
+        prvs = cv2.cvtColor(frames[0], cv2.COLOR_BGR2GRAY)
+        hsv = np.zeros_like(frames[0])
+        hsv[..., 1] = 255
+        fgmasks = []
+        fgmasks.append(np.zeros(frames[0].shape[:2], np.uint8))
+        for i in tqdm(range(1, len(frames))):
+            next = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
+            #(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+            #the last parameter we use OPTFLOW_FARNEBACK_GAUSSIAN = 256
+            #the sixth parameter determines the window size, the larger it is the blurer we use 50
+            flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 50, 3, 5, 1.5, 256)
+            mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+            hsv[..., 0] = ang*180/np.pi/2
+            hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+            bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            #now we convert every fram to 0 or 255
+            (thresh, im_bw) = cv2.threshold(bgr[:,:, 2:3], 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+            cv2.imshow('frame2', im_bw)
+            k = cv2.waitKey(30) & 0xff
+            # replay any > 0 to 1
+            im_bw[im_bw > 0] = 1
+            prvs = next
+            fgmasks.append(im_bw)
         return np.array(fgmasks)

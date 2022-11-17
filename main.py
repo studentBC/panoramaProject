@@ -17,6 +17,8 @@ FG_MOG2 = "mog2"
 FG_GSOC = "gsoc"
 FG_GMG = "gmg"
 FG_HOG = "hog"
+FG_DOF = "dof"
+FG_LKO = "lko"
 FG_MV = "mv" #motion vector
 
 panoramas = []
@@ -118,6 +120,8 @@ def extract_foreground(frames, args):
         fgmasks = extractor.get_foreground_mask_gmg(frames)
     elif args.fgmode == FG_HOG:
         fgmasks = extractor.get_foreground_mask_hog(frames)
+    elif args.fgmode == FG_DOF:
+        fgmasks = extractor.get_foreground_mask_dof(frames)
     elif args.fgmode == FG_MV:
         fgmasks = extractor.get_foreground_mask_mv(frames, int(args.mv_blocksize), int(args.mv_k), float(args.mv_threshold))
     else:
@@ -163,7 +167,6 @@ def main(args):
 
     frames = get_frames(cap)
     fg, bg, fgmasks = extract_foreground(frames, args)
-
     # remove foreground and fill out the removed part in background
     # this issue involved camera motion, size change, object tracking
     fillBackground(bg, fgmasks)
@@ -185,7 +188,7 @@ def main(args):
         rev, nextp = sp.stitch(pp, bg[i])
         panoramas.append(nextp)
         pp = nextp
-
+    cv2.imwrite("panorama.jpg", pp)
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images
     for i in range(frame_count):
@@ -198,13 +201,12 @@ def main(args):
 
     # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
     # save video
-    wcap = cv2.VideoCapture(0)
-    sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
+    video=cv2.VideoWriter('result.mp4', -1,fps,(width,height))
+    #sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
     for f in fianlFrame:
-        sv.write(f)
+        video.write(f)
 
-    wcap.release()
-    sv.release()
+    video.release()
     cap.release()
     cv2.destroyAllWindows()
 

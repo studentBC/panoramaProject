@@ -171,24 +171,22 @@ def main(args):
     # this issue involved camera motion, size change, object tracking
     fillBackground(bg, fgmasks)
     # using processed background and stitch them together to create panorama
-    # https://pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
-    # stitchy = cv2.Stitcher.create()
-    # stitchy = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
-    # ret, panorama = stitchy.stitch(backGround)
-    # if ret != cv2.STITCHER_OK:
-    #     print("error occur in stitching error code: ", ret)
-    sp = StitchPanorama()
-    pp = bg[1]
-    fianlFrame = []
-    # since the very beginning frame are usually black we just skip it but in fact
-    # we should search for black one and determine which frame is start frame i just too lazy...
-    panoramas.append(bg[0])
-    panoramas.append(bg[1])
-    for i in range(2, frame_count):
-        rev, nextp = sp.stitch(pp, bg[i])
-        panoramas.append(nextp)
-        pp = nextp
-    cv2.imwrite("panorama.jpg", pp)
+    # we just need to sample 5 points for stitching Q1 - Q5
+    test = [bg[0],  bg[5], bg[10]]
+    sp = StitchPanorama(test)
+    cv2.imwrite("simplePanorama.jpg", sp.simpleStitch())
+    cv2.imwrite("ola.jpg", sp.getPanorama())
+    # pp = bg[1]
+    # fianlFrame = []
+    # # since the very beginning frame are usually black we just skip it but in fact
+    # # we should search for black one and determine which frame is start frame i just too lazy...
+    # panoramas.append(bg[0])
+    # panoramas.append(bg[1])
+    # for i in range(2, frame_count):
+    #     rev, nextp = sp.stitch(pp, bg[i])
+    #     panoramas.append(nextp)
+    #     pp = nextp
+    # cv2.imwrite("panorama.jpg", pp)
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images
     for i in range(frame_count):

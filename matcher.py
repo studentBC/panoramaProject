@@ -37,7 +37,7 @@ class matcher:
 
             H, s = cv2.findHomography(matchedPointsCurrent, matchedPointsPrev, cv2.RANSAC, 4)
             return H
-            return None
+        return None
 
     def getSIFTFeatures(self, im):
         gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)

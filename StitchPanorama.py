@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import sys
 from matcher import matcher
+from tqdm import tqdm
 #https://python.plainenglish.io/opencv-image-stitching-second-part-388784ccd1a
 #https://towardsdatascience.com/image-panorama-stitching-with-opencv-2402bde6b46c
 class StitchPanorama:
@@ -17,11 +18,27 @@ class StitchPanorama:
     def simpleStitch(self):
         stitchy=cv2.Stitcher.create()
         ret, panorama = stitchy.stitch(self.images)
-        print(cv2.STITCHER_OK, ret)
+        print("go stitching ...")
+
         if ret != cv2.STITCHER_OK:
             print('stitch Failed! error: ', ret)
         else:
             return panorama
+
+
+        # prev = panorama = self.images[0]
+        # end = len(self.images)
+        # for i in tqdm(range(1, end)):
+        #     ret, panorama = stitchy.stitch([ panorama, self.images[i]])
+        #     print(cv2.STITCHER_OK, ret)
+        #     if ret != cv2.STITCHER_OK:
+        #         print('stitch Failed! error: ', ret)
+        #         panorama = prev
+        #     else:
+        #         panorama = cv2.resize(panorama, self.images[0].shape[:2])
+        #         prev = panorama 
+
+        return prev
 
     def prepare_lists(self):
         self.centerIdx = self.count/2
@@ -33,7 +50,6 @@ class StitchPanorama:
                 self.right_list.append(self.images[i])
 
     def leftshift(self):
-		# self.left_list = reversed(self.left_list)
         a = self.left_list[0]
         for b in self.left_list[1:]:
             H = self.matcher_obj.match(a, b, 'left')
@@ -68,7 +84,6 @@ class StitchPanorama:
             tmp = cv2.warpPerspective(each, H, dsize)
             tmp = self.mix_and_match(self.leftImage, tmp)
             self.leftImage = tmp
-		# self.showImage('left')
 
     def mix_and_match(self, leftImage, warpedImage):
         i1y, i1x = leftImage.shape[:2]
@@ -80,29 +95,19 @@ class StitchPanorama:
             for j in range(0, i1y):
                 try:
                     if(np.array_equal(leftImage[j,i],np.array([0,0,0])) and  np.array_equal(warpedImage[j,i],np.array([0,0,0]))):
-						# print "BLACK"
 						# instead of just putting it with black, 
 						# take average of all nearby values and avg it.
                         warpedImage[j,i] = [0, 0, 0]
                     else:
                         if(np.array_equal(warpedImage[j,i],[0,0,0])):
-							# print "PIXEL"
                             warpedImage[j,i] = leftImage[j,i]
                         else:
                             if not np.array_equal(leftImage[j,i], [0,0,0]):
-                                bw, gw, rw = warpedImage[j,i]
                                 bl,gl,rl = leftImage[j,i]
-								# b = (bl+bw)/2
-								# g = (gl+gw)/2
-								# r = (rl+rw)/2
                                 warpedImage[j, i] = [bl,gl,rl]
                 except:
                     pass
-		# cv2.imshow("waRPED mix", warpedImage)
-		# cv2.waitKey()
         return warpedImage
-
-        #cv2.imshow("original_image_stitched_crop.jpg", trim(dst))
 
     def showImage(self, string=None):
         if string == 'left':

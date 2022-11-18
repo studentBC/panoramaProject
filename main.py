@@ -10,6 +10,7 @@ import numpy as np
 from foreground_extraction import ForegroundExtractor
 from StitchPanorama import StitchPanorama
 from tqdm import tqdm
+from matcher import matcher
 
 FG_GRABCUT = "grabcut"
 FG_MOG = "mog"
@@ -32,6 +33,7 @@ def mse(img1, img2):
     err = np.sum(diff**2)
     mse = err/(float(height*width))
     return mse
+
 #using BFS to get foreground and background
 def fillBackground(bg, fgmasks):
     print("Filling background...")
@@ -102,7 +104,6 @@ def fillBackground(bg, fgmasks):
                         bg[a][i][j][2] = R/count
                     else:
                         print("maybe go diagnoal direction ???")
-        cv2.imwrite("./tmp/frame%d.jpg" % a, bg[a])
 
 def extract_foreground(frames, args):
     print("Extracting foreground...")
@@ -172,39 +173,28 @@ def main(args):
     fillBackground(bg, fgmasks)
     # using processed background and stitch them together to create panorama
     # we just need to sample 5 points for stitching Q1 - Q5
-    test = [bg[0],  bg[5], bg[10]]
-    sp = StitchPanorama(test)
+    sampleBG = [ bg[i] for i in range(0, frame_count, fps) ]
+    sp = StitchPanorama(sampleBG)
     cv2.imwrite("simplePanorama.jpg", sp.simpleStitch())
-    cv2.imwrite("ola.jpg", sp.getPanorama())
-    # pp = bg[1]
-    # fianlFrame = []
-    # # since the very beginning frame are usually black we just skip it but in fact
-    # # we should search for black one and determine which frame is start frame i just too lazy...
-    # panoramas.append(bg[0])
-    # panoramas.append(bg[1])
-    # for i in range(2, frame_count):
-    #     rev, nextp = sp.stitch(pp, bg[i])
-    #     panoramas.append(nextp)
-    #     pp = nextp
-    # cv2.imwrite("panorama.jpg", pp)
+    #cv2.imwrite("ola.jpg", sp.getPanorama())
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images
-    for i in range(frame_count):
-        #print(len(foreGround[i]), len(foreGround[i][0]))
-        #print(len(panoramas[i]), len(panoramas[i][0]))
-        new_h, new_w, channels = panoramas[i].shape
-        resize = cv2.resize(fg[i], (new_w, new_h))
-        dst = cv2.addWeighted(resize, 0.5, panoramas[i], 0.7, 0)
-        fianlFrame.append(dst)
+    # for i in range(frame_count):
+    #     #print(len(foreGround[i]), len(foreGround[i][0]))
+    #     #print(len(panoramas[i]), len(panoramas[i][0]))
+    #     new_h, new_w, channels = panoramas[i].shape
+    #     resize = cv2.resize(fg[i], (new_w, new_h))
+    #     dst = cv2.addWeighted(resize, 0.5, panoramas[i], 0.7, 0)
+    #     fianlFrame.append(dst)
 
-    # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
-    # save video
-    video=cv2.VideoWriter('result.mp4', -1,fps,(width,height))
-    #sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
-    for f in fianlFrame:
-        video.write(f)
+    # # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
+    # # save video
+    # video=cv2.VideoWriter('result.mp4', -1,fps,(width,height))
+    # #sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
+    # for f in fianlFrame:
+    #     video.write(f)
 
-    video.release()
+    # video.release()
     cap.release()
     cv2.destroyAllWindows()
 

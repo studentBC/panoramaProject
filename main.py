@@ -11,6 +11,7 @@ from foreground_extraction import ForegroundExtractor
 from StitchPanorama import StitchPanorama
 from tqdm import tqdm
 from matcher import matcher
+from fillBackground import fillBackGround
 
 FG_GRABCUT = "grabcut"
 FG_MOG = "mog"
@@ -24,86 +25,9 @@ FG_MV = "mv" #motion vector
 
 panoramas = []
 
+                    
 
-def mse(img1, img2):
-    #img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-    #img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-    height, width, _ = img1.shape
-    diff = cv2.subtract(img1, img2)
-    err = np.sum(diff**2)
-    mse = err/(float(height*width))
-    return mse
 
-#using BFS to get foreground and background
-def fillBackground(bg, fgmasks):
-    print("Filling background...")
-    frame_count, height, width, channel = bg.shape
-    Threshold = 10
-    B, G, R, count = 0, 0 ,0, 0
-    for a in tqdm(range(frame_count)):
-        #cv2.imwrite("./tmp/frame%d.jpg" % a, backGround[a])
-        for b in range(frame_count):
-            #if the missing pixel is found in other frame then we can fill the missing one
-            m = mse(bg[a], bg[b])
-            if a != b and m < Threshold:
-                for i in range(height):
-                    for j in range(width):
-                        #fgmask = 0 means background
-                        sa = bg[a][i][j][0]+bg[a][i][j][1]+bg[a][i][j][2]
-                        sb = bg[b][i][j][0]+bg[b][i][j][1]+bg[b][i][j][2]
-                        if fgmasks[a][i][j] and fgmasks[b][i][j] == 0 and sa == 0 and sb:
-                            bg[a][i][j][0] = bg[b][i][j][0]
-                            bg[a][i][j][1] = bg[b][i][j][1]
-                            bg[a][i][j][2] = bg[b][i][j][2]
-                            fgmasks[a][i][j] = 0
-                        elif fgmasks[a][i][j] == 0 and fgmasks[b][i][j] and sb == 0 and sa:
-                            bg[b][i][j][0] = bg[a][i][j][0]
-                            bg[b][i][j][1] = bg[a][i][j][1]
-                            bg[b][i][j][2] = bg[a][i][j][2]
-                            fgmasks[b][i][j] = 0
-        for i in range(height):
-            for j in range(width):
-                #if the pixel is still 0 then we use average of its surrounding pixel to fill it
-                if fgmasks[a][i][j]:
-                    I = i-1
-                    while I > -1 and fgmasks[a][I][j]:
-                        I-=1
-                    if I > -1:
-                        B+=bg[a][I][j][0]
-                        G+=bg[a][I][j][1]
-                        R+=bg[a][I][j][2]
-                        count+=1
-                    I = i+1
-                    while I < height and fgmasks[a][I][j]:
-                        I+=1
-                    if I < height:
-                        B+=bg[a][I][j][0]
-                        G+=bg[a][I][j][1]
-                        R+=bg[a][I][j][2]
-                        count+=1
-                    J = j-1
-                    while J > -1 and fgmasks[a][i][J]:
-                        J-=1
-                    if J > -1:
-                        B+=bg[a][i][J][0]
-                        G+=bg[a][i][J][1]
-                        R+=bg[a][i][J][2]
-                        count+=1
-                    J = j+1
-                    while J < width and fgmasks[a][i][J]:
-                        J+=1
-                    if J < width:
-                        B+=bg[a][i][J][0]
-                        G+=bg[a][i][J][1]
-                        R+=bg[a][i][J][2]
-                        count+=1
-
-                    if count:
-                        bg[a][i][j][0] = B/count
-                        bg[a][i][j][1] = G/count
-                        bg[a][i][j][2] = R/count
-                    else:
-                        print("maybe go diagnoal direction ???")
 
 def extract_foreground(frames, args):
     print("Extracting foreground...")
@@ -170,10 +94,12 @@ def main(args):
     fg, bg, fgmasks = extract_foreground(frames, args)
     # remove foreground and fill out the removed part in background
     # this issue involved camera motion, size change, object tracking
-    fillBackground(bg, fgmasks)
+    # fillBackground(bg, fgmasks)
+    fbg = fillBackGround()
+    sampleBG = fbg.fill_background(bg, fgmasks, fps)
     # using processed background and stitch them together to create panorama
     # we just need to sample 5 points for stitching Q1 - Q5
-    sampleBG = [ bg[i] for i in range(0, frame_count, fps) ]
+    # sampleBG = [ bg[i] for i in range(0, frame_count, fps) ]
     sp = StitchPanorama(sampleBG)
     cv2.imwrite("simplePanorama.jpg", sp.simpleStitch())
     #cv2.imwrite("ola.jpg", sp.getPanorama())

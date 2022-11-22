@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from matcher import matcher
 
-class fillBackGround:
+class FillBackGround:
     def mse(self, img1, img2):
         #img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
         #img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)

@@ -143,3 +143,31 @@ class ForegroundExtractor:
             prvs = next
             fgmasks.append(im_bw)
         return np.array(fgmasks)
+
+    def update_background(self, current_frame, prev_bg, learningRate):
+        bg = learningRate * current_frame + (1 - learningRate) * prev_bg
+        bg = np.uint8(bg)  
+        return bg
+
+    def get_foreground_mask_dst(self, frames):
+        THRESH = 60
+        n = len(frames)
+        bg = cv2.cvtColor(frames[0], cv2.COLOR_RGB2GRAY)
+        fgmasks = []
+        fgmasks.append(np.zeros(frames[0].shape[:2], np.uint8))
+        for i in tqdm(range(1, n)):
+            #Convert frame to grayscale
+            frame_gray = cv2.cvtColor(frames[i], cv2.COLOR_RGB2GRAY) 
+            #D(N) = || I(t) - I(t+N) || = || I(t-N) - I(t) ||
+            diff = cv2.absdiff(bg, frame_gray)
+            #Mask Thresholding
+            threshold_method = cv2.THRESH_BINARY
+            # when we meet threshold we assign that pixel to 255
+            ret, motion_mask = cv2.threshold(diff, THRESH, 255, threshold_method)
+            # Update background at every 1/frames rate
+            bg = self.update_background(frame_gray, bg, 0.1)
+            #Display the Motion Mask
+            cv2.imshow('Motion Mask', motion_mask)
+            k = cv2.waitKey(30) & 0xff
+            fgmasks.append(motion_mask)
+        return np.array(fgmasks)

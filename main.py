@@ -11,7 +11,7 @@ from foreground_extraction import ForegroundExtractor
 from StitchPanorama import StitchPanorama
 from tqdm import tqdm
 from matcher import matcher
-from fillBackground import fillBackGround
+from fill_background import FillBackGround
 
 FG_GRABCUT = "grabcut"
 FG_MOG = "mog"
@@ -97,7 +97,7 @@ def main(args):
     # remove foreground and fill out the removed part in background
     # this issue involved camera motion, size change, object tracking
     # fillBackground(bg, fgmasks)
-    fbg = fillBackGround()
+    fbg = FillBackGround()
     sampleBG = fbg.fill_background(bg, fgmasks, fps)
     # using processed background and stitch them together to create panorama
     # we just need to sample 5 points for stitching Q1 - Q5

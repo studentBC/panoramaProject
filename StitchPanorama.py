@@ -16,29 +16,10 @@ class StitchPanorama:
 
 
     def simpleStitch(self):
-        stitchy=cv2.Stitcher.create()
+        print("Generating Panorama ...")
+        stitchy = cv2.Stitcher.create()
         ret, panorama = stitchy.stitch(self.images)
-        print("go stitching ...")
-
-        if ret != cv2.STITCHER_OK:
-            print('stitch Failed! error: ', ret)
-        else:
-            return panorama
-
-
-        # prev = panorama = self.images[0]
-        # end = len(self.images)
-        # for i in tqdm(range(1, end)):
-        #     ret, panorama = stitchy.stitch([ panorama, self.images[i]])
-        #     print(cv2.STITCHER_OK, ret)
-        #     if ret != cv2.STITCHER_OK:
-        #         print('stitch Failed! error: ', ret)
-        #         panorama = prev
-        #     else:
-        #         panorama = cv2.resize(panorama, self.images[0].shape[:2])
-        #         prev = panorama 
-
-        return prev
+        return panorama if ret == cv2.STITCHER_OK else None
 
     def prepare_lists(self):
         self.centerIdx = self.count/2
@@ -74,7 +55,7 @@ class StitchPanorama:
 
         self.leftImage = tmp
 
-		
+
     def rightshift(self):
         for each in self.right_list:
             H = self.matcher_obj.match(self.leftImage, each, 'right')
@@ -95,7 +76,7 @@ class StitchPanorama:
             for j in range(0, i1y):
                 try:
                     if(np.array_equal(leftImage[j,i],np.array([0,0,0])) and  np.array_equal(warpedImage[j,i],np.array([0,0,0]))):
-						# instead of just putting it with black, 
+						# instead of just putting it with black,
 						# take average of all nearby values and avg it.
                         warpedImage[j,i] = [0, 0, 0]
                     else:

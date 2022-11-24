@@ -25,7 +25,7 @@ FG_MV = "mv" #motion vector
 FG_DST = "dst"
 panoramas = []
 
-                    
+
 
 
 
@@ -103,7 +103,11 @@ def main(args):
     # we just need to sample 5 points for stitching Q1 - Q5
     # sampleBG = [ bg[i] for i in range(0, frame_count, fps) ]
     sp = StitchPanorama(sampleBG)
-    cv2.imwrite("simplePanorama.jpg", sp.simpleStitch())
+    panorama = sp.simpleStitch()
+    if panorama is None:
+        print(f"Fail to generate panorama")
+    else:
+        cv2.imwrite("simplePanorama.jpg", panorama)
     #cv2.imwrite("ola.jpg", sp.getPanorama())
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images

@@ -1,8 +1,10 @@
+import sys
+
 import cv2
 import numpy as np
-import sys
-from libs.matcher import matcher
 from tqdm import tqdm
+
+from panorama.matcher import matcher
 
 
 #https://python.plainenglish.io/opencv-image-stitching-second-part-388784ccd1a
@@ -114,6 +116,7 @@ class StitchPanorama:
     def showImage(self, string=None):
         if string == 'left':
             cv2.imshow("left image", self.leftImage)
+
 
 # cv2.imshow("left image", cv2.resize(self.leftImage, (400,400)))
         elif string == "right":

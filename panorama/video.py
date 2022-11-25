@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
-from libs.foreground_extraction import ForegroundExtractor
 from tqdm import tqdm
+
+from panorama.foreground_extraction import ForegroundExtractor
 
 
 class Video:
@@ -20,6 +21,7 @@ class Video:
         self._cap = cv2.VideoCapture(filepath)
         self._background = np.zeros(shape=[self.width, self.height, 3],
                                     dtype=np.uint8)
+        self.filename = filepath.split('/')[-1].split('.')[0]
 
     def __enter__(self):
         return self
@@ -31,13 +33,13 @@ class Video:
         self._background = background
 
     def mergeForeground(self, bg: np.ndarray, fg: np.ndarray,
-                        fgmask: np.ndarray) -> None:
+                        fgmask: np.ndarray) -> list[np.ndarray]:
         print('merge panorama and foreground...')
         frames = []
         for i in tqdm(range(len(fg))):
             frame = self.overlay_image_alpha(bg, fg[i], 0, 0, fgmask[i])
             frames.append(frame)
-        self.write('result', frames, len(bg[0]), len(bg))
+        return frames
 
     def write(self, filename: str, frames: list[np.ndarray] | np.ndarray,
               w: int, h: int) -> None:
@@ -109,8 +111,6 @@ class Video:
 
         fg = frames * fgmasks[:, :, :, np.newaxis]
         bg = frames * bgmasks[:, :, :, np.newaxis]
-
-        self.write('fg', fg, self.width, self.height)
 
         return fg, bg, fgmasks
 

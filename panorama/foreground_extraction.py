@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
-
-from libs.motion_vector import MotionVector
-from tqdm import tqdm
 from imutils.object_detection import non_max_suppression
+from tqdm import tqdm
+
+from panorama.motion_vector import MotionVector
 
 
 class ForegroundExtractor:

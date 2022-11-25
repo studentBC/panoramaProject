@@ -44,7 +44,7 @@ class Video:
     def write(self, filename: str, frames: list[np.ndarray] | np.ndarray,
               w: int, h: int) -> None:
         file = cv2.VideoWriter(f'{filename}.mp4',
-                               cv2.VideoWriter_fourcc(*'MP4V'), self.fps,
+                               cv2.VideoWriter_fourcc(*'mp4v'), self.fps,
                                (w, h))
         for frame in frames:
             file.write(frame)
@@ -107,7 +107,7 @@ class Video:
             raise Exception("Invalid fgmode")
 
         bgmasks = np.where((fgmasks == 1), 0, 1).astype('uint8')
-        print(frames.shape, fgmasks.shape, fgmasks[:, :, :, np.newaxis].shape)
+        # print(frames.shape, fgmasks.shape, fgmasks[:, :, :, np.newaxis].shape)
 
         fg = frames * fgmasks[:, :, :, np.newaxis]
         bg = frames * bgmasks[:, :, :, np.newaxis]

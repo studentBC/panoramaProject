@@ -57,7 +57,7 @@ def main(config: argparse.Namespace) -> None:
 
         bg = cv2.imread(panoFile)
         frames = cap.mergeForeground(bg, fg, fgmasks)
-        self.write(f'{cap.filename}_result', frames, len(bg[0]), len(bg))
+        cap.write(f'{cap.filename}_result', frames, len(bg[0]), len(bg))
 
     cv2.destroyAllWindows()
 

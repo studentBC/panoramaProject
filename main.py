@@ -32,14 +32,17 @@ def main(config: argparse.Namespace) -> None:
         # remove foreground and fill out the removed part in background
         # this issue involved camera motion, size change, object tracking
         # fillBackground(bg, fgmasks)
-        fbg = FillBackGround()
-        sampleBG = fbg.fill_background(bg, fgmasks, cap.fps)
+        # fbg = FillBackGround()
+        # sampleBG = fbg.fill_background(bg, fgmasks, cap.fps)
 
         # using processed background and stitch them together to create panorama
         # we just need to sample 5 points for stitching Q1 - Q5
         # sampleBG = [ bg[i] f or i in range(0, frame_count, fps) ]
-        sp = StitchPanorama(sampleBG)
-        cv2.imwrite("simplePanorama.jpg", sp.simpleStitch())
+        # sp = StitchPanorama(sampleBG)
+        # bg = sp.simpleStitch()
+        # cv2.imwrite("simplePanorama.jpg", bg)
+        bg = cv2.imread("pano.jpg")
+        cap.mergeForeground(bg, fg, fgmasks)
 
     cv2.destroyAllWindows()
 

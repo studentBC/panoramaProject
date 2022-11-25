@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from libs.foreground_extraction import ForegroundExtractor
+from tqdm import tqdm
 
 
 class Video:
@@ -17,6 +18,8 @@ class Video:
 
     def __init__(self, filepath: str) -> None:
         self._cap = cv2.VideoCapture(filepath)
+        self._background = np.zeros(shape=[self.width, self.height, 3],
+                                    dtype=np.uint8)
 
     def __enter__(self):
         return self
@@ -24,34 +27,39 @@ class Video:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self._cap.release()
 
-    def set_backgound(self, background: any) -> None:
-        return
+    def set_background(self, background: np.ndarray) -> None:
+        self._background = background
 
-    def write(self, filename: str) -> None:
-        pass
-        # display your foreground objects as a video sequence against a white plain background frame by frame.
-        # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images
-        # for i in range(frame_count):
-        #     #print(len(foreGround[i]), len(foreGround[i][0]))
-        #     #print(len(panoramas[i]), len(panoramas[i][0]))
-        #     new_h, new_w, channels = panoramas[i].shape
-        #     resize = cv2.resize(fg[i], (new_w, new_h))
-        #     dst = cv2.addWeighted(resize, 0.5, panoramas[i], 0.7, 0)
-        #     fianlFrame.append(dst)
+    def mergeForeground(self, bg: np.ndarray, fg: np.ndarray,
+                        fgmask: np.ndarray) -> None:
+        print('merge panorama and foreground...')
+        frames = []
+        for i in tqdm(range(len(fg))):
+            frame = self.overlay_image_alpha(bg, fg[i], 0, 0, fgmask[i])
+            frames.append(frame)
+        self.write('result', frames, len(bg[0]), len(bg))
 
-        # # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
-        # # save video
-        # video=cv2.VideoWriter('result.mp4', -1,fps,(width,height))
-        # #sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
-        # for f in fianlFrame:
-        #     video.write(f)
+    def write(self, filename: str, frames: list[np.ndarray] | np.ndarray,
+              w: int, h: int) -> None:
+        file = cv2.VideoWriter(f'{filename}.mp4',
+                               cv2.VideoWriter_fourcc(*'MP4V'), self.fps,
+                               (w, h))
+        for frame in frames:
+            file.write(frame)
+        file.release()
+
     @property
     def fps(self) -> int:
-        # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         # frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        # fps =  int(cap.get(cv2.CAP_PROP_FPS))
         return int(self._cap.get(cv2.CAP_PROP_FPS))
+
+    @property
+    def width(self) -> int:
+        return int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+    @property
+    def height(self) -> int:
+        return int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     @property
     def frames(self) -> np.ndarray:
@@ -102,6 +110,8 @@ class Video:
         fg = frames * fgmasks[:, :, :, np.newaxis]
         bg = frames * bgmasks[:, :, :, np.newaxis]
 
+        self.write('fg', fg, self.width, self.height)
+
         return fg, bg, fgmasks
 
     def show(self, frames: np.ndarray) -> None:
@@ -110,3 +120,27 @@ class Video:
             # & 0xFF is required for a 64-bit system
             if cv2.waitKey(1000 // self.fps) & 0xFF == ord('q'):
                 break
+
+    def overlay_image_alpha(self, img: np.ndarray, overlay: np.ndarray, x: int,
+                            y: int, alpha_mask: np.ndarray) -> np.ndarray:
+        # Image ranges
+        img = img.copy()
+        y1, y2 = max(0, y), min(img.shape[0], y + overlay.shape[0])
+        x1, x2 = max(0, x), min(img.shape[1], x + overlay.shape[1])
+
+        # Overlay ranges
+        # y1o, y2o = max(0, -y), min(overlay.shape[0], img.shape[0] - y)
+        # x1o, x2o = max(0, -x), min(overlay.shape[1], img.shape[1] - x)
+
+        # Exit if nothing to do
+        if y1 >= y2 or x1 >= x2:
+            return img
+
+        # Blend overlay within the determined ranges
+        img_crop = img[y1:y2, x1:x2]
+        mask = alpha_mask[:, :, np.newaxis]
+        # img_overlay_crop = overlay[y1o:y2o, x1o:x2o]
+        mask_inv = 1.0 - mask
+
+        img_crop[:] = mask * overlay + mask_inv * img_crop
+        return img

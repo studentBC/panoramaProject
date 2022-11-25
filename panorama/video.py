@@ -22,6 +22,7 @@ class Video:
         self._background = np.zeros(shape=[self.width, self.height, 3],
                                     dtype=np.uint8)
         self.filename = filepath.split('/')[-1].split('.')[0]
+        self._frames = np.array([])
 
     def __enter__(self):
         return self
@@ -37,7 +38,10 @@ class Video:
         print('merge panorama and foreground...')
         frames = []
         for i in tqdm(range(len(fg))):
-            frame = self.overlay_image_alpha(bg, fg[i], 0, 0, fgmask[i])
+            res = cv2.matchTemplate(bg, self.frames[i], cv2.TM_CCOEFF_NORMED)
+            _, _, _, max_loc = cv2.minMaxLoc(res)
+            frame = self.overlay_image_alpha(bg, fg[i], max_loc[0], max_loc[1],
+                                             fgmask[i])
             frames.append(frame)
         return frames
 
@@ -65,6 +69,9 @@ class Video:
 
     @property
     def frames(self) -> np.ndarray:
+        if len(self._frames) > 0:
+            return self._frames
+
         frames = []
         while (self._cap.isOpened()):
             ret, frame = self._cap.read()
@@ -72,8 +79,9 @@ class Video:
                 frames.append(frame)
             else:
                 break
+        self._frames = np.array(frames)
 
-        return np.array(frames)
+        return self._frames
 
     def extract_foreground(
             self, mode: str,
@@ -115,6 +123,7 @@ class Video:
         return fg, bg, fgmasks
 
     def show(self, frames: np.ndarray) -> None:
+
         for frame in frames:
             cv2.imshow('frame', frame)
             # & 0xFF is required for a 64-bit system

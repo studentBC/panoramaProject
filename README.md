@@ -8,5 +8,7 @@ csci576 panorama final Project
 
 ## Usage
 ```python3 main.py -f <video file path> [-fg] [foreground extraction method]```
+- Add `-c` to remove cached file if a new panorama is needed
+
 ### example
 ```python3 main.py -f sample.mp4 -fg mog2```

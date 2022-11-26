@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
-
-
-from motion_vector import MotionVector
-from tqdm import tqdm
 from imutils.object_detection import non_max_suppression
+from tqdm import tqdm
+
+from panorama.motion_vector import MotionVector
+
 
 class ForegroundExtractor:
     hog = cv2.HOGDescriptor()
@@ -14,12 +14,14 @@ class ForegroundExtractor:
         fgmasks = []
         for frame in tqdm(frames):
             fgmask = np.zeros(frame.shape[:2], np.uint8)
-            bgdModel = np.zeros((1,65), np.float64)
-            fgdModel = np.zeros((1,65), np.float64)
-            rect = (0, 0, frame.shape[1], frame.shape[0]) # width, height
-            cv2.grabCut(frame, fgmask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
+            bgdModel = np.zeros((1, 65), np.float64)
+            fgdModel = np.zeros((1, 65), np.float64)
+            rect = (0, 0, frame.shape[1], frame.shape[0])  # width, height
+            cv2.grabCut(frame, fgmask, rect, bgdModel, fgdModel, 5,
+                        cv2.GC_INIT_WITH_RECT)
 
-            fgmask = np.where((fgmask == 2) | (fgmask == 0), 0, 1).astype('uint8')
+            fgmask = np.where((fgmask == 2) | (fgmask == 0), 0,
+                              1).astype('uint8')
             fgmasks.append(fgmask)
         return np.array(fgmasks)
 
@@ -63,10 +65,12 @@ class ForegroundExtractor:
             fgmask = np.where((fgmask == 255), 1, 0).astype('uint8')
             fgmasks.append(fgmask)
         return np.array(fgmasks)
+
     #get motion vector
     def get_foreground_mask_mv(self, frames, bs, k, threshold):
         frame_count, height, width, _ = frames.shape
-        frames_yuv = np.array([cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb) for frame in frames])
+        frames_yuv = np.array(
+            [cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb) for frame in frames])
         fgmasks = np.zeros((frame_count, height, width), np.uint8)
 
         mv = MotionVector()
@@ -76,9 +80,11 @@ class ForegroundExtractor:
                 for x in range(0, width, bs):
                     bw = bs if x + bs <= width else width - x
                     bh = bs if y + bs <= height else height - y
-                    dir_y, dir_x = mv.getBlockMV(frames_yuv[fn-1], frames_yuv[fn], y, x, bh, bw, k)
-                    if dir_y ** 2 + dir_x ** 2 > threshold ** 2:
-                        fgmasks[fn, y: y+bh, x: x+bw] = 1
+                    dir_y, dir_x = mv.getBlockMV(frames_yuv[fn - 1],
+                                                 frames_yuv[fn], y, x, bh, bw,
+                                                 k)
+                    if dir_y**2 + dir_x**2 > threshold**2:
+                        fgmasks[fn, y:y + bh, x:x + bw] = 1
             cv2.imshow("dasd", frames[fn] * fgmasks[fn, :, :, np.newaxis])
             cv2.waitKey(100)
 
@@ -91,8 +97,10 @@ class ForegroundExtractor:
         fgmasks = []
         for frame in tqdm(frames):
             #rects, weights = self.hog.detectMultiScale(frame, winStride=(8,8) )
-            (rects, weights) = self.hog.detectMultiScale(frame, winStride=(8, 8),
-		                                            padding=(2, 2), scale=1.05)
+            (rects, weights) = self.hog.detectMultiScale(frame,
+                                                         winStride=(8, 8),
+                                                         padding=(2, 2),
+                                                         scale=1.05)
             # draw the original bounding boxes
             for (x, y, w, h) in rects:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
@@ -110,14 +118,16 @@ class ForegroundExtractor:
                 # cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 255, 0), 2)
                 # apply GrabCut using the the bounding box segmentation method
                 # try to cut human off from each box
-                bgdModel = np.zeros((1,65), np.float64)
-                fgdModel = np.zeros((1,65), np.float64)
-                rect = (xA, yA, xB-xA, yB-yA)
-                cv2.grabCut(frame, fgmask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
-            fgmask = np.where((fgmask == 2) | (fgmask == 0), 0, 1).astype('uint8')
+                bgdModel = np.zeros((1, 65), np.float64)
+                fgdModel = np.zeros((1, 65), np.float64)
+                rect = (xA, yA, xB - xA, yB - yA)
+                cv2.grabCut(frame, fgmask, rect, bgdModel, fgdModel, 5,
+                            cv2.GC_INIT_WITH_RECT)
+            fgmask = np.where((fgmask == 2) | (fgmask == 0), 0,
+                              1).astype('uint8')
             fgmasks.append(fgmask)
         return np.array(fgmasks)
-        
+
     def get_foreground_mask_dof(self, frames):
         prvs = cv2.cvtColor(frames[0], cv2.COLOR_BGR2GRAY)
         hsv = np.zeros_like(frames[0])
@@ -129,13 +139,16 @@ class ForegroundExtractor:
             #(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
             #the last parameter we use OPTFLOW_FARNEBACK_GAUSSIAN = 256
             #the sixth parameter determines the window size, the larger it is the blurer we use 50
-            flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 50, 3, 5, 1.5, 256)
+            flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 50,
+                                                3, 5, 1.5, 256)
             mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-            hsv[..., 0] = ang*180/np.pi/2
+            hsv[..., 0] = ang * 180 / np.pi / 2
             hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
             bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
             #now we convert every fram to 0 or 255
-            (thresh, im_bw) = cv2.threshold(bgr[:,:, 2:3], 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+            (thresh,
+             im_bw) = cv2.threshold(bgr[:, :, 2:3], 128, 255,
+                                    cv2.THRESH_BINARY | cv2.THRESH_OTSU)
             cv2.imshow('frame2', im_bw)
             k = cv2.waitKey(30) & 0xff
             # replay any > 0 to 1
@@ -146,7 +159,7 @@ class ForegroundExtractor:
 
     def update_background(self, current_frame, prev_bg, learningRate):
         bg = learningRate * current_frame + (1 - learningRate) * prev_bg
-        bg = np.uint8(bg)  
+        bg = np.uint8(bg)
         return bg
 
     def get_foreground_mask_dst(self, frames):
@@ -157,13 +170,14 @@ class ForegroundExtractor:
         fgmasks.append(np.zeros(frames[0].shape[:2], np.uint8))
         for i in tqdm(range(1, n)):
             #Convert frame to grayscale
-            frame_gray = cv2.cvtColor(frames[i], cv2.COLOR_RGB2GRAY) 
+            frame_gray = cv2.cvtColor(frames[i], cv2.COLOR_RGB2GRAY)
             #D(N) = || I(t) - I(t+N) || = || I(t-N) - I(t) ||
             diff = cv2.absdiff(bg, frame_gray)
             #Mask Thresholding
             threshold_method = cv2.THRESH_BINARY
             # when we meet threshold we assign that pixel to 255
-            ret, motion_mask = cv2.threshold(diff, THRESH, 255, threshold_method)
+            ret, motion_mask = cv2.threshold(diff, THRESH, 255,
+                                             threshold_method)
             # Update background at every 1/frames rate
             bg = self.update_background(frame_gray, bg, 0.1)
             #Display the Motion Mask

@@ -98,31 +98,58 @@ def main(args):
     # this issue involved camera motion, size change, object tracking
     # fillBackground(bg, fgmasks)
     fbg = FillBackGround()
-    sampleBG = fbg.fill_background(bg, fgmasks, fps)
+    fbg.fill_background(bg, fgmasks, fps)
     # using processed background and stitch them together to create panorama
     # we just need to sample 5 points for stitching Q1 - Q5
-    # sampleBG = [ bg[i] for i in range(0, frame_count, fps) ]
+    sampleBG = [ frames[i] for i in range(0, frame_count, 10) ]
     sp = StitchPanorama(sampleBG)
-    cv2.imwrite("simplePanorama.jpg", sp.simpleStitch())
+    pp = sp.simpleStitch()
+    cv2.imwrite("simplePanorama.jpg", pp)
+    match = matcher()
+    fianlFrame = []
+    resize = (fg[0].shape[1], fg[0].shape[0])
     #cv2.imwrite("ola.jpg", sp.getPanorama())
     # display your foreground objects as a video sequence against a white plain background frame by frame.
     # https://www.etutorialspoint.com/index.php/319-python-opencv-overlaying-or-blending-two-images
-    # for i in range(frame_count):
-    #     #print(len(foreGround[i]), len(foreGround[i][0]))
-    #     #print(len(panoramas[i]), len(panoramas[i][0]))
-    #     new_h, new_w, channels = panoramas[i].shape
-    #     resize = cv2.resize(fg[i], (new_w, new_h))
-    #     dst = cv2.addWeighted(resize, 0.5, panoramas[i], 0.7, 0)
-    #     fianlFrame.append(dst)
+    for a in tqdm(range(frame_count)):
+        #print(len(foreGround[i]), len(foreGround[i][0]))
+        #print(len(panoramas[i]), len(panoramas[i][0]))
+        p = pp 
+        h = match.match(pp, fg[a], "lol")
+        # print('------- h is --------')
+        # print(h)
+        # print('---------------------')
+        if h is None:
+            continue
+        for i in range(fg[0].shape[0]):
+            for j in range(fg[0].shape[1]):
+                if fgmasks[a][i][j]:
+                    pos = np.dot(h, [i, j, 1])
+                    if pos[0] < 0:
+                        pos[0] = -pos[0]
+                    elif pos[1] < 0:
+                        pos[1] = -pos[1]
+                    pos[0] = min(max(0, pos[0]), p.shape[0]-1)
+                    pos[1] = min(max(0, pos[1]), p.shape[1]-1)
+                    # print(pos)
+                    p[int(pos[0])][int(pos[1])][0] = fg[a][i][j][0]
+                    p[int(pos[0])][int(pos[1])][1] = fg[a][i][j][1]
+                    p[int(pos[0])][int(pos[1])][2] = fg[a][i][j][2]
+        # new_h, new_w, channels = panoramas[i].shape
+        # resize = cv2.resize(fg[i], (new_w, new_h))
+        # dst = cv2.addWeighted(resize, 0.5, p, 0.7, 0)
+        cv2.imshow('lol', p)
+        k = cv2.waitKey(30) & 0xff
+        fianlFrame.append(p)
 
     # # Create a video a new video by defining a path in the panorama image, the foreground objects move in time synchronized manner.
     # # save video
-    # video=cv2.VideoWriter('result.mp4', -1,fps,(width,height))
-    # #sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
-    # for f in fianlFrame:
-    #     video.write(f)
+    video=cv2.VideoWriter('result.mp4', -1, fps,(pp.shape[1],pp.shape[0]))
+    #sv = cv2.VideoWriter('./tmp/result.mp4', -1, fps, (height, width))
+    for f in fianlFrame:
+        video.write(f)
 
-    # video.release()
+    video.release()
     cap.release()
     cv2.destroyAllWindows()
 

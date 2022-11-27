@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 from panorama.foreground_extraction import ForegroundExtractor
+from panorama.matcher import matcher
 
 
 class Video:
@@ -33,17 +34,30 @@ class Video:
     def set_background(self, background: np.ndarray) -> None:
         self._background = background
 
-    def mergeForeground(self, bg: np.ndarray, fg: np.ndarray,
-                        fgmask: np.ndarray) -> list[np.ndarray]:
+    def mergeForeground(self,
+                        bg: np.ndarray,
+                        fg: np.ndarray,
+                        n: int = 1) -> tuple[list[np.ndarray], np.ndarray]:
         print('merge panorama and foreground...')
         frames = []
-        for i in tqdm(range(len(fg))):
-            res = cv2.matchTemplate(bg, self.frames[i], cv2.TM_CCOEFF_NORMED)
-            _, _, _, max_loc = cv2.minMaxLoc(res)
-            frame = self.overlay_image_alpha(bg, fg[i], max_loc[0], max_loc[1],
-                                             fgmask[i])
+        out1 = bg.copy()
+        m = matcher()
+        for i in tqdm(range(fg.shape[0])):
+            H = m.match(bg, self.frames[i])
+            if H is None:
+                frames.append(self.frames[-1])
+                continue
+            h, w = bg.shape[0], bg.shape[1]
+            fgReg = cv2.warpPerspective(fg[i], H, (w, h))
+            frame = self.overlay_image_alpha(bg, fgReg)
             frames.append(frame)
-        return frames
+            # cv2.imshow('frame', frame)
+            # if cv2.waitKey(1000 // self.fps) & 0xFF == ord('q'):
+            #     break
+
+            if i % (self.fps * n) == 0:
+                out1 = self.overlay_image_alpha(out1, fgReg)
+        return frames, out1
 
     def write(self, filename: str, frames: list[np.ndarray] | np.ndarray,
               w: int, h: int) -> None:
@@ -130,26 +144,13 @@ class Video:
             if cv2.waitKey(1000 // self.fps) & 0xFF == ord('q'):
                 break
 
-    def overlay_image_alpha(self, img: np.ndarray, overlay: np.ndarray, x: int,
-                            y: int, alpha_mask: np.ndarray) -> np.ndarray:
-        # Image ranges
-        img = img.copy()
-        y1, y2 = max(0, y), min(img.shape[0], y + overlay.shape[0])
-        x1, x2 = max(0, x), min(img.shape[1], x + overlay.shape[1])
-
-        # Overlay ranges
-        # y1o, y2o = max(0, -y), min(overlay.shape[0], img.shape[0] - y)
-        # x1o, x2o = max(0, -x), min(overlay.shape[1], img.shape[1] - x)
-
-        # Exit if nothing to do
-        if y1 >= y2 or x1 >= x2:
-            return img
-
-        # Blend overlay within the determined ranges
-        img_crop = img[y1:y2, x1:x2]
-        mask = alpha_mask[:, :, np.newaxis]
-        # img_overlay_crop = overlay[y1o:y2o, x1o:x2o]
-        mask_inv = 1.0 - mask
-
-        img_crop[:] = mask * overlay + mask_inv * img_crop
-        return img
+    def overlay_image_alpha(
+        self,
+        img: np.ndarray,
+        overlay: np.ndarray,
+        bgLowerBound=np.array([0, 0, 0]),
+        bgUpperBound=np.array([5, 5, 5])
+    ) -> np.ndarray:
+        mask = cv2.inRange(overlay, bgLowerBound, bgUpperBound)
+        masked_img = cv2.bitwise_and(img, img, mask=mask)
+        return cv2.bitwise_or(overlay, masked_img)

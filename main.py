@@ -1,17 +1,12 @@
 import argparse
-import math
 import os
 import glob
-import shutil
-import sys
-import time
 
 import cv2
 import numpy as np
 from tqdm import tqdm
 
 from panorama.fill_background import FillBackGround
-from panorama.matcher import matcher
 from panorama.StitchPanorama import StitchPanorama
 from panorama.video import Video
 
@@ -32,6 +27,19 @@ def parse_args():
     return parser.parse_args()
 
 
+def get_video_cache(filename: str) -> np.ndarray:
+    cap = cv2.VideoCapture(filename)
+    frames = []
+    while (cap.isOpened()):
+        ret, frame = cap.read()
+        if ret is True:
+            frames.append(frame)
+        else:
+            break
+    frames = np.array(frames)
+    return frames
+
+
 def main(config: argparse.Namespace) -> None:
     with Video(config.filepath) as cap:
         if config.clear:
@@ -41,6 +49,7 @@ def main(config: argparse.Namespace) -> None:
 
         fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
         cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
+        # fg = get_video_cache(f'{cap.filename}_fg.mp4')
 
         panoFile = f'{cap.filename}_pano.jpg'
         if not os.path.exists(panoFile):
@@ -56,8 +65,12 @@ def main(config: argparse.Namespace) -> None:
             print('Cached panorama file is used.')
 
         bg = cv2.imread(panoFile)
-        frames = cap.mergeForeground(bg, fg, fgmasks)
-        cap.write(f'{cap.filename}_result', frames, len(bg[0]), len(bg))
+        out2, out1 = cap.mergeForeground(bg, fg)
+        cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
+        cap.write(f'{cap.filename}_result', out2, bg.shape[1], bg.shape[0])
+
+        # res = get_video_cache(f'{cap.filename}_result.mp4')
+        # TODO: create a new camera motion
 
     cv2.destroyAllWindows()
 

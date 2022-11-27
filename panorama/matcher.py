@@ -7,8 +7,8 @@ class matcher:
     def __init__(self):
         #self.surf = cv2.SURF_create()
         self.sift = cv2.SIFT_create()
-        FLANN_INDEX_KDTREE = 0
-        index_params = dict(algorithm=0, trees=5)
+        FLANN_INDEX_KDTREE = 1
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
         self.flann = cv2.FlannBasedMatcher(index_params, search_params)
 

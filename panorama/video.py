@@ -51,6 +51,9 @@ class Video:
             fgReg = cv2.warpPerspective(fg[i], H, (w, h))
             frame = self.overlay_image_alpha(bg, fgReg)
             frames.append(frame)
+            # cv2.imshow('frame', frame)
+            # if cv2.waitKey(1000 // self.fps) & 0xFF == ord('q'):
+            #     break
 
             if i % (self.fps * n) == 0:
                 out1 = self.overlay_image_alpha(out1, fgReg)
@@ -141,10 +144,13 @@ class Video:
             if cv2.waitKey(1000 // self.fps) & 0xFF == ord('q'):
                 break
 
-    def overlay_image_alpha(self, img: np.ndarray,
-                            overlay: np.ndarray) -> np.ndarray:
-        # Image ranges
-        mask = cv2.inRange(overlay, np.array([0, 0, 0]), np.array([20, 20,
-                                                                   20]))
+    def overlay_image_alpha(
+        self,
+        img: np.ndarray,
+        overlay: np.ndarray,
+        bgLowerBound=np.array([0, 0, 0]),
+        bgUpperBound=np.array([5, 5, 5])
+    ) -> np.ndarray:
+        mask = cv2.inRange(overlay, bgLowerBound, bgUpperBound)
         masked_img = cv2.bitwise_and(img, img, mask=mask)
         return cv2.bitwise_or(overlay, masked_img)

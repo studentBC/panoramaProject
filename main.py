@@ -27,17 +27,17 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_fg_cache(filename: str) -> np.ndarray:
-    fg_cap = cv2.VideoCapture(f'{filename}_fg.mp4')
-    fg = []
-    while (fg_cap.isOpened()):
-        ret, frame = fg_cap.read()
+def get_video_cache(filename: str) -> np.ndarray:
+    cap = cv2.VideoCapture(filename)
+    frames = []
+    while (cap.isOpened()):
+        ret, frame = cap.read()
         if ret is True:
-            fg.append(frame)
+            frames.append(frame)
         else:
             break
-    fg = np.array(fg)
-    return fg
+    frames = np.array(frames)
+    return frames
 
 
 def main(config: argparse.Namespace) -> None:
@@ -49,7 +49,7 @@ def main(config: argparse.Namespace) -> None:
 
         fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
         cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
-        # fg = get_fg_cache(cap.filename)
+        # fg = get_video_cache(f'{cap.filename}_fg.mp4')
 
         panoFile = f'{cap.filename}_pano.jpg'
         if not os.path.exists(panoFile):
@@ -68,6 +68,9 @@ def main(config: argparse.Namespace) -> None:
         out2, out1 = cap.mergeForeground(bg, fg)
         cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
         cap.write(f'{cap.filename}_result', out2, bg.shape[1], bg.shape[0])
+
+        # res = get_video_cache(f'{cap.filename}_result.mp4')
+        # TODO: create a new camera motion
 
     cv2.destroyAllWindows()
 

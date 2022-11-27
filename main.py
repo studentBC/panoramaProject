@@ -39,8 +39,17 @@ def main(config: argparse.Namespace) -> None:
             for f in glob.glob(f"{cap.filename}_*"):
                 os.remove(f)
 
-        fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
-        cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
+        # fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
+        # cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
+        fg_cap = cv2.VideoCapture(f'{cap.filename}_fg.mp4')
+        fg = []
+        while (fg_cap.isOpened()):
+            ret, frame = fg_cap.read()
+            if ret is True:
+                fg.append(frame)
+            else:
+                break
+        fg = np.array(fg)
 
         panoFile = f'{cap.filename}_pano.jpg'
         if not os.path.exists(panoFile):
@@ -56,8 +65,8 @@ def main(config: argparse.Namespace) -> None:
             print('Cached panorama file is used.')
 
         bg = cv2.imread(panoFile)
-        frames = cap.mergeForeground(bg, fg, fgmasks)
-        cap.write(f'{cap.filename}_result', frames, len(bg[0]), len(bg))
+        frames = cap.mergeForeground(bg, fg)
+        cap.write(f'{cap.filename}_result', frames, bg.shape[1], bg.shape[0])
 
     cv2.destroyAllWindows()
 

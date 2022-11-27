@@ -8,7 +8,7 @@ class matcher:
     def __init__(self):
         #self.surf = cv2.SURF_create()
         self.sift = cv2.SIFT_create()
-        FLANN_INDEX_KDTREE = 0
+        FLANN_INDEX_KDTREE = 1
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
         self.flann = cv2.FlannBasedMatcher(index_params, search_params)
@@ -60,7 +60,6 @@ class matcher:
             dst_pts = np.float32([
                 dstFeatures['kp'][m.trainIdx].pt for m in good
             ]).reshape(-1, 1, 2)
-            transformation, _ = cv2.findHomography(dst_pts, src_pts,
-                                                   cv2.RANSAC, 5.0)
+            transformation, mask = cv2.findHomography(dst_pts, src_pts,
+                                                      cv2.RANSAC, 5.0)
             return transformation
-        return None

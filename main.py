@@ -1,17 +1,12 @@
 import argparse
-import math
 import os
 import glob
-import shutil
-import sys
-import time
 
 import cv2
 import numpy as np
 from tqdm import tqdm
 
 from panorama.fill_background import FillBackGround
-from panorama.matcher import matcher
 from panorama.StitchPanorama import StitchPanorama
 from panorama.video import Video
 
@@ -32,6 +27,19 @@ def parse_args():
     return parser.parse_args()
 
 
+def get_fg_cache(filename: str) -> np.ndarray:
+    fg_cap = cv2.VideoCapture(f'{filename}_fg.mp4')
+    fg = []
+    while (fg_cap.isOpened()):
+        ret, frame = fg_cap.read()
+        if ret is True:
+            fg.append(frame)
+        else:
+            break
+    fg = np.array(fg)
+    return fg
+
+
 def main(config: argparse.Namespace) -> None:
     with Video(config.filepath) as cap:
         if config.clear:
@@ -39,17 +47,9 @@ def main(config: argparse.Namespace) -> None:
             for f in glob.glob(f"{cap.filename}_*"):
                 os.remove(f)
 
-        # fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
-        # cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
-        fg_cap = cv2.VideoCapture(f'{cap.filename}_fg.mp4')
-        fg = []
-        while (fg_cap.isOpened()):
-            ret, frame = fg_cap.read()
-            if ret is True:
-                fg.append(frame)
-            else:
-                break
-        fg = np.array(fg)
+        fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
+        cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
+        # fg = get_fg_cache(cap.filename)
 
         panoFile = f'{cap.filename}_pano.jpg'
         if not os.path.exists(panoFile):
@@ -65,8 +65,9 @@ def main(config: argparse.Namespace) -> None:
             print('Cached panorama file is used.')
 
         bg = cv2.imread(panoFile)
-        frames = cap.mergeForeground(bg, fg)
-        cap.write(f'{cap.filename}_result', frames, bg.shape[1], bg.shape[0])
+        out2, out1 = cap.mergeForeground(bg, fg)
+        cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
+        cap.write(f'{cap.filename}_result', out2, bg.shape[1], bg.shape[0])
 
     cv2.destroyAllWindows()
 

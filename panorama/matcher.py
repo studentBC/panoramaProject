@@ -40,26 +40,3 @@ class matcher:
         gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
         kp, des = self.sift.detectAndCompute(gray, None)
         return {'kp': kp, 'des': des}
-
-    def searchTransformation(self, src: np.ndarray,
-                             dst: np.ndarray) -> np.ndarray | None:
-        srcFeatures = self.getSIFTFeatures(src)
-        dstFeatures = self.getSIFTFeatures(dst)
-        matches = self.flann.knnMatch(srcFeatures['des'],
-                                      dstFeatures['des'],
-                                      k=2)
-        good = []
-        for m, n in matches:
-            if m.distance < 0.7 * n.distance:
-                good.append(m)
-
-        if len(good) > 4:
-            src_pts = np.float32([
-                srcFeatures['kp'][m.queryIdx].pt for m in good
-            ]).reshape(-1, 1, 2)
-            dst_pts = np.float32([
-                dstFeatures['kp'][m.trainIdx].pt for m in good
-            ]).reshape(-1, 1, 2)
-            transformation, mask = cv2.findHomography(dst_pts, src_pts,
-                                                      cv2.RANSAC, 5.0)
-            return transformation

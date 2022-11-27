@@ -34,21 +34,27 @@ class Video:
     def set_background(self, background: np.ndarray) -> None:
         self._background = background
 
-    def mergeForeground(self, bg: np.ndarray,
-                        fg: np.ndarray) -> list[np.ndarray]:
+    def mergeForeground(self,
+                        bg: np.ndarray,
+                        fg: np.ndarray,
+                        n: int = 1) -> tuple[list[np.ndarray], np.ndarray]:
         print('merge panorama and foreground...')
         frames = []
+        out1 = bg.copy()
         m = matcher()
         for i in tqdm(range(fg.shape[0])):
-            H = m.searchTransformation(bg, self.frames[i])
+            H = m.match(bg, self.frames[i])
             if H is None:
                 frames.append(self.frames[-1])
                 continue
             h, w = bg.shape[0], bg.shape[1]
             fgReg = cv2.warpPerspective(fg[i], H, (w, h))
-            frame = self.overlay_image_alpha(bg, fgReg, 0, 0)
+            frame = self.overlay_image_alpha(bg, fgReg)
             frames.append(frame)
-        return frames
+
+            if i % (self.fps * n) == 0:
+                out1 = self.overlay_image_alpha(out1, fgReg)
+        return frames, out1
 
     def write(self, filename: str, frames: list[np.ndarray] | np.ndarray,
               w: int, h: int) -> None:
@@ -135,10 +141,10 @@ class Video:
             if cv2.waitKey(1000 // self.fps) & 0xFF == ord('q'):
                 break
 
-    def overlay_image_alpha(self, img: np.ndarray, overlay: np.ndarray, x: int,
-                            y: int) -> np.ndarray:
+    def overlay_image_alpha(self, img: np.ndarray,
+                            overlay: np.ndarray) -> np.ndarray:
         # Image ranges
-        mask = cv2.inRange(overlay, np.array([0, 0, 0]), np.array([10, 10,
-                                                                   10]))
+        mask = cv2.inRange(overlay, np.array([0, 0, 0]), np.array([20, 20,
+                                                                   20]))
         masked_img = cv2.bitwise_and(img, img, mask=mask)
         return cv2.bitwise_or(overlay, masked_img)

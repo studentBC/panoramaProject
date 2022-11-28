@@ -76,9 +76,9 @@ class Video:
             frame = frames[i]
             lx, rx = int(camera_center[0] - halfWidth), int(camera_center[0] +
                                                             halfWidth)
-            ty, by = int(camera_center[1] - halfHeight), int(camera_center[1] +
+            ly, ry = int(camera_center[1] - halfHeight), int(camera_center[1] +
                                                              halfHeight)
-            new_frames.append(frame[ty:by, lx:rx])
+            new_frames.append(frame[ly:ry, lx:rx])
             camera_center[0] += dx
             camera_center[1] += dy
         return new_frames

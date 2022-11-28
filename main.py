@@ -4,7 +4,6 @@ import glob
 
 import cv2
 import numpy as np
-from tqdm import tqdm
 
 from panorama.fill_background import FillBackGround
 from panorama.StitchPanorama import StitchPanorama
@@ -72,7 +71,7 @@ def main(config: argparse.Namespace) -> None:
 
         # res = get_video_cache(f'{cap.filename}_result.mp4')
         print(
-            'Draw a line to indicate the direction of camera motion and press q to leave...'
+            'Draw a line to indicate the direction of camera motion and press q to leave'
         )
         camera = DrawLineWidget(bg, res)
         while True:

@@ -9,6 +9,7 @@ from tqdm import tqdm
 from panorama.fill_background import FillBackGround
 from panorama.StitchPanorama import StitchPanorama
 from panorama.video import Video
+from panorama.draw_line import DrawLineWidget
 
 panoramas = []
 
@@ -65,12 +66,24 @@ def main(config: argparse.Namespace) -> None:
             print('Cached panorama file is used.')
 
         bg = cv2.imread(panoFile)
-        out2, out1 = cap.mergeForeground(bg, fg)
+        res, out1 = cap.mergeForeground(bg, fg)
         cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
-        cap.write(f'{cap.filename}_result', out2, bg.shape[1], bg.shape[0])
+        cap.write(f'{cap.filename}_result', res, bg.shape[1], bg.shape[0])
 
         # res = get_video_cache(f'{cap.filename}_result.mp4')
-        # TODO: create a new camera motion
+        print(
+            'Draw a line to indicate the direction of camera motion and press q to leave...'
+        )
+        camera = DrawLineWidget(bg, res)
+        while True:
+            cv2.imshow(camera.window_name, camera.show_image())
+            key = cv2.waitKey(1)
+            if key == ord('q'):
+                cv2.destroyWindow(camera.window_name)
+                break
+        out2 = cap.createNewCamera(bg, res, camera.image_coordinates[0],
+                                   camera.image_coordinates[1])
+        cap.write(f'{cap.filename}_out2', out2, cap.width, cap.height)
 
     cv2.destroyAllWindows()
 

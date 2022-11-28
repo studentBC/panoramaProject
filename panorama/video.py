@@ -37,7 +37,7 @@ class Video:
     def mergeForeground(self,
                         bg: np.ndarray,
                         fg: np.ndarray,
-                        n: int = 1) -> tuple[list[np.ndarray], np.ndarray]:
+                        n: int = 1) -> tuple[np.ndarray, np.ndarray]:
         print('merge panorama and foreground...')
         frames = []
         out1 = bg.copy()
@@ -57,7 +57,44 @@ class Video:
 
             if i % (self.fps * n) == 0:
                 out1 = self.overlay_image_alpha(out1, fgReg)
-        return frames, out1
+        return np.array(frames), out1
+
+    def createNewCamera(self, bg: np.ndarray, frames: np.ndarray,
+                        start: tuple[int, int],
+                        end: tuple[int, int]) -> list[np.ndarray]:
+        start = self._normalize_coordinates(*start, bg.shape[1], bg.shape[0])
+        end = self._normalize_coordinates(*end, bg.shape[1], bg.shape[0])
+        dx = (end[0] - start[0]) / frames.shape[0]
+        dy = (end[1] - start[1]) / frames.shape[0]
+        halfWidth = int(0.5 * self.width)
+        halfHeight = int(0.5 * self.height)
+
+        new_frames = []
+        camera_center: list[float] = [start[0], start[1]]
+
+        for i in tqdm(range(frames.shape[0])):
+            frame = frames[i]
+            lx, rx = int(camera_center[0] - halfWidth), int(camera_center[0] +
+                                                            halfWidth)
+            ly, ry = int(camera_center[1] - halfHeight), int(camera_center[1] +
+                                                             halfHeight)
+            new_frames.append(frame[ly:ry, lx:rx])
+            camera_center[0] += dx
+            camera_center[1] += dy
+        return new_frames
+
+    def _normalize_coordinates(self, x: int, y: int, w: int,
+                               h: int) -> tuple[int, int]:
+        if x < 0.5 * self.width:
+            x = int(0.5 * self.width)
+        elif x > w - 0.5 * self.width:
+            x = int(w - 0.5 * self.width) - 1
+
+        if y < 0.5 * self.height:
+            y = int(0.5 * self.height)
+        elif y > h - 0.5 * self.height:
+            y = int(h - 0.5 * self.height) - 1
+        return (x, y)
 
     def write(self, filename: str, frames: list[np.ndarray] | np.ndarray,
               w: int, h: int) -> None:

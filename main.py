@@ -70,7 +70,7 @@ def main(config: argparse.Namespace) -> None:
         cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
         cap.write(f'{cap.filename}_result', res, bg.shape[1], bg.shape[0])
 
-        res = get_video_cache(f'{cap.filename}_result.mp4')
+        # res = get_video_cache(f'{cap.filename}_result.mp4')
         print(
             'Draw a line to indicate the direction of camera motion and press q to leave'
         )

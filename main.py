@@ -5,6 +5,7 @@ import glob
 import cv2
 import numpy as np
 
+from panorama.object_remover import ObjectRemover
 from panorama.fill_background import FillBackGround
 from panorama.StitchPanorama import StitchPanorama
 from panorama.video import Video
@@ -69,7 +70,7 @@ def main(config: argparse.Namespace) -> None:
         cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
         cap.write(f'{cap.filename}_result', res, bg.shape[1], bg.shape[0])
 
-        # res = get_video_cache(f'{cap.filename}_result.mp4')
+        res = get_video_cache(f'{cap.filename}_result.mp4')
         print(
             'Draw a line to indicate the direction of camera motion and press q to leave'
         )
@@ -83,6 +84,12 @@ def main(config: argparse.Namespace) -> None:
         out2 = cap.createNewCamera(bg, res, camera.image_coordinates[0],
                                    camera.image_coordinates[1])
         cap.write(f'{cap.filename}_out2', out2, cap.width, cap.height)
+
+        print("Creating output3...")
+        obj_remover = ObjectRemover()
+        fg_removed = obj_remover.remove_largest_object(fg)
+        out3, _ = cap.mergeForeground(bg, fg_removed)
+        cap.write(f'{cap.filename}_out3', out3, bg.shape[1], bg.shape[0])
 
     cv2.destroyAllWindows()
 

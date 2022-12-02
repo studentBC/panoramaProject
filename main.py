@@ -5,6 +5,7 @@ import glob
 import cv2
 import numpy as np
 
+from panorama.object_remover import ObjectRemover
 from panorama.fill_background import FillBackGround
 from panorama.StitchPanorama import StitchPanorama
 from panorama.video import Video
@@ -64,25 +65,33 @@ def main(config: argparse.Namespace) -> None:
         else:
             print('Cached panorama file is used.')
 
-        bg = cv2.imread(panoFile)
-        res, out1 = cap.mergeForeground(bg, fg)
+        pano = cv2.imread(panoFile)
+        res, out1 = cap.mergeForeground(pano, fg)
         cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
-        cap.write(f'{cap.filename}_result', res, bg.shape[1], bg.shape[0])
+        cap.write(f'{cap.filename}_result', res, pano.shape[1], pano.shape[0])
 
         # res = get_video_cache(f'{cap.filename}_result.mp4')
         print(
             'Draw a line to indicate the direction of camera motion and press q to leave'
         )
-        camera = DrawLineWidget(bg, res)
+        camera = DrawLineWidget(pano, res)
         while True:
             cv2.imshow(camera.window_name, camera.show_image())
             key = cv2.waitKey(1)
             if key == ord('q'):
                 cv2.destroyWindow(camera.window_name)
                 break
-        out2 = cap.createNewCamera(bg, res, camera.image_coordinates[0],
+        out2 = cap.createNewCamera(pano, res, camera.image_coordinates[0],
                                    camera.image_coordinates[1])
         cap.write(f'{cap.filename}_out2', out2, cap.width, cap.height)
+
+        print("Creating output3...")
+        obj_remover = ObjectRemover()
+        fg_removed = obj_remover.remove_largest_object(fg)
+        bgmasks_removed = np.where((fg_removed < 5), 1, 0).astype('uint8')
+        bg_removed = bg * bgmasks_removed
+        out3 = bg_removed + fg_removed
+        cap.write(f'{cap.filename}_out3', out3, cap.width, cap.height)
 
     cv2.destroyAllWindows()
 

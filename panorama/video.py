@@ -40,7 +40,7 @@ class Video:
         fg: np.ndarray,
         checkpoint_interval: int = 4,
         n: int = 1,
-    ):
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         print('merge panorama and foreground...')
         print(
@@ -51,6 +51,7 @@ class Video:
         prev: tuple[int, any] = [-1, np.zeros(shape=[3, 3], dtype=np.float64)]
         frames = []
         out1 = bg.copy()
+        transformations = []
 
         frame_checkpoints = list(
             range(0, fg.shape[0],
@@ -85,6 +86,7 @@ class Video:
 
             for j in range(count):
                 curH += step
+                transformations.append(curH)
                 reg = cv2.warpPerspective(fg[prev[0] + 1 + j], curH,
                                           (bg.shape[1], bg.shape[0]))
                 frame = self.overlay_image_alpha(bg, reg)
@@ -94,7 +96,7 @@ class Video:
                     out1 = self.overlay_image_alpha(out1, reg)
 
             prev = (i, H)
-        return np.array(frames), out1
+        return np.array(frames), out1, np.array(transformations)
 
     def mergeForeground(self,
                         bg: np.ndarray,
@@ -104,12 +106,16 @@ class Video:
         frames = []
         out1 = bg.copy()
         m = matcher()
+        transformations = []
+
         for i in tqdm(range(fg.shape[0])):
             H = m.match(bg, self.frames[i])
             if H is None:
                 frames.append(self.frames[-1])
+                transformations.append(transformations[-1])
                 continue
 
+            transformations.append(H)
             h, w = bg.shape[0], bg.shape[1]
             fgReg = cv2.warpPerspective(fg[i], H, (w, h))
             frame = self.overlay_image_alpha(bg, fgReg)
@@ -117,7 +123,7 @@ class Video:
 
             if i % (self.fps * n) == 0:
                 out1 = self.overlay_image_alpha(out1, fgReg)
-        return np.array(frames), out1
+        return np.array(frames), out1, np.array(transformations)
 
     def createNewCamera(
         self,

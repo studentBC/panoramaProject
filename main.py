@@ -56,9 +56,9 @@ def main(config: argparse.Namespace) -> None:
             for f in glob.glob(f"{cap.filename}_*"):
                 os.remove(f)
 
-        # fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
-        # cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
-        fg = get_video_cache(f'{cap.filename}_fg.mp4')
+        fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
+        cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
+        # fg = get_video_cache(f'{cap.filename}_fg.mp4')
 
         panoFile = f'{cap.filename}_pano.jpg'
         if not os.path.exists(panoFile):
@@ -74,11 +74,11 @@ def main(config: argparse.Namespace) -> None:
             print('Cached panorama file is used.')
 
         pano = cv2.imread(panoFile)
-        # res, out1 = cap.mergeForegroundManual(
-        #     pano, fg) if not config.automatic else cap.mergeForeground(
-        #         pano, fg)
-        # cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
-        # cap.write(f'{cap.filename}_result', res, pano.shape[1], pano.shape[0])
+        res, out1, h = cap.mergeForegroundManual(
+            pano, fg) if not config.automatic else cap.mergeForeground(
+                pano, fg)
+        cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
+        cap.write(f'{cap.filename}_result', res, pano.shape[1], pano.shape[0])
 
         res = get_video_cache(f'{cap.filename}_result.mp4')
         print(
@@ -96,6 +96,7 @@ def main(config: argparse.Namespace) -> None:
                                    (config.width, config.height))
         cap.write(f'{cap.filename}_out2', out2, config.width, config.height)
 
+        # TODO: reuse H from mergeForeground
         print("Creating output3...")
         obj_remover = ObjectRemover()
         fg_removed = obj_remover.remove_largest_object(fg)

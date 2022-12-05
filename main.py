@@ -96,7 +96,6 @@ def main(config: argparse.Namespace) -> None:
                                    (config.width, config.height))
         cap.write(f'{cap.filename}_out2', out2, config.width, config.height)
 
-        # TODO: reuse H from mergeForeground
         print("Creating output3...")
         obj_remover = ObjectRemover()
         fg_removed = obj_remover.remove_largest_object(fg)

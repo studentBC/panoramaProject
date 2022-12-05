@@ -25,6 +25,14 @@ def parse_args():
                         "--clear",
                         action=argparse.BooleanOptionalAction,
                         default=False)
+    parser.add_argument("-a",
+                        "--automatic",
+                        action=argparse.BooleanOptionalAction,
+                        default=False)
+
+    parser.add_argument("-dw", "--width", default=640)
+    parser.add_argument("-dh", "--height", default=480)
+
     return parser.parse_args()
 
 
@@ -66,11 +74,13 @@ def main(config: argparse.Namespace) -> None:
             print('Cached panorama file is used.')
 
         pano = cv2.imread(panoFile)
-        res, out1 = cap.mergeForeground(pano, fg)
+        res, out1, h = cap.mergeForegroundManual(
+            pano, fg) if not config.automatic else cap.mergeForeground(
+                pano, fg)
         cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
         cap.write(f'{cap.filename}_result', res, pano.shape[1], pano.shape[0])
 
-        # res = get_video_cache(f'{cap.filename}_result.mp4')
+        res = get_video_cache(f'{cap.filename}_result.mp4')
         print(
             'Draw a line to indicate the direction of camera motion and press q to leave'
         )
@@ -82,8 +92,9 @@ def main(config: argparse.Namespace) -> None:
                 cv2.destroyWindow(camera.window_name)
                 break
         out2 = cap.createNewCamera(pano, res, camera.image_coordinates[0],
-                                   camera.image_coordinates[1])
-        cap.write(f'{cap.filename}_out2', out2, cap.width, cap.height)
+                                   camera.image_coordinates[1],
+                                   (config.width, config.height))
+        cap.write(f'{cap.filename}_out2', out2, config.width, config.height)
 
         print("Creating output3...")
         obj_remover = ObjectRemover()

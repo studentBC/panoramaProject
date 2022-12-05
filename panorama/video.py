@@ -92,7 +92,7 @@ class Video:
                 frame = self.overlay_image_alpha(bg, reg)
                 frames.append(frame)
 
-                if (i + j) % (self.fps * n) == 0:
+                if (prev[0] + 1 + j) % (self.fps * n) == 0:
                     out1 = self.overlay_image_alpha(out1, reg)
 
             prev = (i, H)

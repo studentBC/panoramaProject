@@ -34,6 +34,68 @@ class Video:
     def set_background(self, background: np.ndarray) -> None:
         self._background = background
 
+    def mergeForegroundManual(
+        self,
+        bg: np.ndarray,
+        fg: np.ndarray,
+        checkpoint_interval: int = 4,
+        n: int = 1,
+    ):
+
+        print('merge panorama and foreground...')
+        print(
+            'Manual match: please click the four corners of the foreground by the order of top-left, bottom-left, bottom-right, top-right.'
+        )
+        w, h = fg[0].shape[1], fg[0].shape[0]
+        fg_pts = np.float32([[0, 0], [0, h], [w, h], [w, 0]]).reshape(-1, 1, 2)
+        prev: tuple[int, any] = [-1, np.zeros(shape=[3, 3], dtype=np.float64)]
+        frames = []
+        out1 = bg.copy()
+
+        frame_checkpoints = list(
+            range(0, fg.shape[0],
+                  self.fps * checkpoint_interval)) + [fg.shape[0] - 1]
+
+        for i in frame_checkpoints:
+            img = bg.copy()
+            positions: list[list[int]] = []
+
+            def draw_circle(event, x, y, flags, param):
+                if event == cv2.EVENT_LBUTTONUP:
+                    cv2.circle(img, (x, y), 10, (0, 0, 255), -1)
+                    positions.append([x, y])
+
+            cv2.namedWindow('image')
+            cv2.setMouseCallback('image', draw_circle)
+            while len(positions) < 4:
+                cv2.imshow('image', img)
+                cv2.imshow('fg', self.frames[i])
+                if cv2.waitKey(20) & 0xFF == ord('q'):
+                    break
+            cv2.destroyWindow('image')
+            cv2.destroyWindow('fg')
+
+            H, mask = cv2.findHomography(
+                fg_pts,
+                np.float32(positions).reshape(-1, 1, 2), cv2.RANSAC, 5.0)
+
+            count = i - prev[0]
+            step = (H - prev[1]) / count
+            curH = prev[1]
+
+            for j in range(count):
+                curH += step
+                reg = cv2.warpPerspective(fg[prev[0] + 1 + j], curH,
+                                          (bg.shape[1], bg.shape[0]))
+                frame = self.overlay_image_alpha(bg, reg)
+                frames.append(frame)
+
+                if (i + j) % (self.fps * n) == 0:
+                    out1 = self.overlay_image_alpha(out1, reg)
+
+            prev = (i, H)
+        return np.array(frames), out1
+
     def mergeForeground(self,
                         bg: np.ndarray,
                         fg: np.ndarray,
@@ -47,6 +109,7 @@ class Video:
             if H is None:
                 frames.append(self.frames[-1])
                 continue
+
             h, w = bg.shape[0], bg.shape[1]
             fgReg = cv2.warpPerspective(fg[i], H, (w, h))
             frame = self.overlay_image_alpha(bg, fgReg)
@@ -63,7 +126,6 @@ class Video:
         start: tuple[int, int],
         end: tuple[int, int],
         dimension=(640, 480)) -> list[np.ndarray]:
-        print(start, end)
         start = self._normalize_coordinates(
             *start,
             *dimension,

@@ -25,6 +25,10 @@ def parse_args():
                         "--clear",
                         action=argparse.BooleanOptionalAction,
                         default=False)
+    parser.add_argument("-a",
+                        "--automatic",
+                        action=argparse.BooleanOptionalAction,
+                        default=False)
 
     parser.add_argument("-dw", "--width", default=640)
     parser.add_argument("-dh", "--height", default=480)
@@ -52,9 +56,9 @@ def main(config: argparse.Namespace) -> None:
             for f in glob.glob(f"{cap.filename}_*"):
                 os.remove(f)
 
-        fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
-        cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
-        # fg = get_video_cache(f'{cap.filename}_fg.mp4')
+        # fg, bg, fgmasks = cap.extract_foreground(config.fgmode, config)
+        # cap.write(f'{cap.filename}_fg', fg, cap.width, cap.height)
+        fg = get_video_cache(f'{cap.filename}_fg.mp4')
 
         panoFile = f'{cap.filename}_pano.jpg'
         if not os.path.exists(panoFile):
@@ -70,11 +74,13 @@ def main(config: argparse.Namespace) -> None:
             print('Cached panorama file is used.')
 
         pano = cv2.imread(panoFile)
-        res, out1 = cap.mergeForeground(pano, fg)
-        cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
-        cap.write(f'{cap.filename}_result', res, pano.shape[1], pano.shape[0])
+        # res, out1 = cap.mergeForegroundManual(
+        #     pano, fg) if not config.automatic else cap.mergeForeground(
+        #         pano, fg)
+        # cv2.imwrite(f'{cap.filename}_out1.jpg', out1)
+        # cap.write(f'{cap.filename}_result', res, pano.shape[1], pano.shape[0])
 
-        # res = get_video_cache(f'{cap.filename}_result.mp4')
+        res = get_video_cache(f'{cap.filename}_result.mp4')
         print(
             'Draw a line to indicate the direction of camera motion and press q to leave'
         )

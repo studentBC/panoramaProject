@@ -82,8 +82,8 @@ def main(config: argparse.Namespace) -> None:
                 cv2.destroyWindow(camera.window_name)
                 break
         out2 = cap.createNewCamera(pano, res, camera.image_coordinates[0],
-                                   camera.image_coordinates[1])
-        cap.write(f'{cap.filename}_out2', out2, cap.width, cap.height)
+                                   camera.image_coordinates[1], (640, 480))
+        cap.write(f'{cap.filename}_out2', out2, 640, 480)
 
         print("Creating output3...")
         obj_remover = ObjectRemover()

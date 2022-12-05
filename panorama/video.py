@@ -51,23 +51,35 @@ class Video:
             fgReg = cv2.warpPerspective(fg[i], H, (w, h))
             frame = self.overlay_image_alpha(bg, fgReg)
             frames.append(frame)
-            # cv2.imshow('frame', frame)
-            # if cv2.waitKey(1000 // self.fps) & 0xFF == ord('q'):
-            #     break
 
             if i % (self.fps * n) == 0:
                 out1 = self.overlay_image_alpha(out1, fgReg)
         return np.array(frames), out1
 
-    def createNewCamera(self, bg: np.ndarray, frames: np.ndarray,
-                        start: tuple[int, int],
-                        end: tuple[int, int]) -> list[np.ndarray]:
-        start = self._normalize_coordinates(*start, bg.shape[1], bg.shape[0])
-        end = self._normalize_coordinates(*end, bg.shape[1], bg.shape[0])
+    def createNewCamera(
+        self,
+        bg: np.ndarray,
+        frames: np.ndarray,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        dimension=(640, 480)) -> list[np.ndarray]:
+        print(start, end)
+        start = self._normalize_coordinates(
+            *start,
+            *dimension,
+            bg.shape[1],
+            bg.shape[0],
+        )
+        end = self._normalize_coordinates(
+            *end,
+            *dimension,
+            bg.shape[1],
+            bg.shape[0],
+        )
         dx = (end[0] - start[0]) / frames.shape[0]
         dy = (end[1] - start[1]) / frames.shape[0]
-        halfWidth = int(0.5 * self.width)
-        halfHeight = int(0.5 * self.height)
+        halfWidth = int(0.5 * dimension[0])
+        halfHeight = int(0.5 * dimension[1])
 
         new_frames = []
         camera_center: list[float] = [start[0], start[1]]
@@ -78,23 +90,19 @@ class Video:
                                                             halfWidth)
             ly, ry = int(camera_center[1] - halfHeight), int(camera_center[1] +
                                                              halfHeight)
+
             new_frames.append(frame[ly:ry, lx:rx])
             camera_center[0] += dx
             camera_center[1] += dy
         return new_frames
 
-    def _normalize_coordinates(self, x: int, y: int, w: int,
-                               h: int) -> tuple[int, int]:
-        if x < 0.5 * self.width:
-            x = int(0.5 * self.width)
-        elif x > w - 0.5 * self.width:
-            x = int(w - 0.5 * self.width) - 1
-
-        if y < 0.5 * self.height:
-            y = int(0.5 * self.height)
-        elif y > h - 0.5 * self.height:
-            y = int(h - 0.5 * self.height) - 1
-        return (x, y)
+    def _normalize_coordinates(self, x: int, y: int, cameraWidth: int,
+                               cameraHeight: int, bgWidth: int,
+                               bgHeight: int) -> tuple[int, int]:
+        return (
+            max(cameraWidth // 2, min(bgWidth - cameraWidth // 2, x)),
+            max(cameraHeight // 2, min(bgHeight - cameraHeight // 2, y)),
+        )
 
     def write(self, filename: str, frames: list[np.ndarray] | np.ndarray,
               w: int, h: int) -> None:
@@ -182,11 +190,11 @@ class Video:
                 break
 
     def overlay_image_alpha(
-        self,
-        img: np.ndarray,
-        overlay: np.ndarray,
-        bgLowerBound=np.array([0, 0, 0]),
-        bgUpperBound=np.array([5, 5, 5])
+            self,
+            img: np.ndarray,
+            overlay: np.ndarray,
+            bgLowerBound=np.array([0, 0, 0]),
+            bgUpperBound=np.array([5, 5, 5]),
     ) -> np.ndarray:
         mask = cv2.inRange(overlay, bgLowerBound, bgUpperBound)
         masked_img = cv2.bitwise_and(img, img, mask=mask)
